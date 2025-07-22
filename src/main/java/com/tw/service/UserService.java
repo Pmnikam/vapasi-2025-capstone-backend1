@@ -1,4 +1,8 @@
 package com.tw.service;
 
-public class UserService {
+import com.tw.dto.UserDto;
+import com.tw.entity.Users;
+
+public interface UserService {
+    Users createUser(UserDto userDto);
 }
