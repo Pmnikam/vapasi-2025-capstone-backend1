@@ -6,17 +6,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public class LoanApplicationDto {
+public class LoanApplicationRequestDto {
     private String applicationId;
-    private double monthlyIncome;
-    private double loanAmount;
     private String loanStatus;
+    private double loanAmount;
     private int loanTenure;
+    private double monthlyIncome;
     private String propertyLocation;
     private String propertyName;
     private double estimatedCost;
-    private String customerEmail;
+    private long profileId;
 }

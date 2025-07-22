@@ -6,14 +6,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public class CustomerProfileDto {
+public class CustomerProfileRequestDto {
     private String dob;
     private String mobile;
     private String address;
     private String aadharNo;
     private String panNo;
-    private String customerEmail;
+    private long userId;
 }

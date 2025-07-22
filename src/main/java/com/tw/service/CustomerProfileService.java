@@ -1,8 +1,9 @@
 package com.tw.service;
 
-import com.tw.dto.CustomerProfileDto;
-import com.tw.entity.CustomerProfile;
+import com.tw.dto.CustomerProfileRequestDto;
+import com.tw.dto.CustomerProfileResponseDto;
 
 public interface CustomerProfileService {
-    CustomerProfile createProfile(CustomerProfileDto dto);
+    CustomerProfileResponseDto createProfile(CustomerProfileRequestDto dto);
+    CustomerProfileResponseDto getProfileById(long id);
 }

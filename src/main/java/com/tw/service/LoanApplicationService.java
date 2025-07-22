@@ -1,8 +1,8 @@
 package com.tw.service;
 
-import com.tw.dto.LoanApplicationDto;
-import com.tw.entity.LoanApplication;
+import com.tw.dto.LoanApplicationRequestDto;
+import com.tw.dto.LoanApplicationResponseDto;
 
 public interface LoanApplicationService {
-    LoanApplication applyForLoan(LoanApplicationDto dto);
-}
+    LoanApplicationResponseDto createApplication(LoanApplicationRequestDto dto);
+    LoanApplicationResponseDto getApplicationById(long id);}
