@@ -1,8 +1,9 @@
 package com.tw.controller;
 
+import com.tw.dto.LoginDto;
 import com.tw.dto.UserDto;
-import com.tw.entity.Users;
 import com.tw.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,8 +17,16 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("/register")
-    public ResponseEntity<Users> register(@RequestBody UserDto dto) {
-        return ResponseEntity.ok(userService.createUser(dto));
+    @PostMapping("/signup")
+    public ResponseEntity<String> signup(@Valid @RequestBody UserDto userDto) {
+        userService.signup(userDto);
+        return ResponseEntity.ok("Signup successful");
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@Valid @RequestBody LoginDto loginDto) {
+        userService.login(loginDto);
+        return ResponseEntity.ok("Login successful");
+    }
+
 }
