@@ -46,6 +46,7 @@
 
         @OneToOne(mappedBy = "loanApplication", cascade = CascadeType.ALL)
         private LoanAccount loanAccount;
+
         @Column(name="doc_type", nullable = false)
         private String documentType;
 

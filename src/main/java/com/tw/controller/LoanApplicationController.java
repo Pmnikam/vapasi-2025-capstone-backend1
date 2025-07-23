@@ -1,7 +1,7 @@
 package com.tw.controller;
 
-import com.tw.dto.CustomerLoanRequestDto;
-import com.tw.dto.CustomerLoanResponseDto;
+import com.tw.dto.LoanApplicationRequestDto;
+import com.tw.dto.LoanApplicationResponseDto;
 import com.tw.service.LoanApplicationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,21 +14,21 @@ public class LoanApplicationController {
     @Autowired
     LoanApplicationService loanApplicationService;
 
-    @PostMapping(value = "/apply", consumes = "application/json")
+    @PostMapping(consumes = "application/json")
     public ResponseEntity<Long> submitApplication(
             @PathVariable Long userId,
-            @RequestBody CustomerLoanRequestDto requestDto) {
+            @RequestBody LoanApplicationRequestDto requestDto) {
 
         Long applicationId = loanApplicationService.submitApplication(userId, requestDto);
         return new ResponseEntity<>(applicationId, HttpStatus.CREATED);
     }
 
     @GetMapping(value = "/{applicationId}", produces = "application/json")
-    public ResponseEntity<CustomerLoanResponseDto> getApplicationById(
+    public ResponseEntity<LoanApplicationResponseDto> getApplicationById(
             @PathVariable Long userId,
             @PathVariable Long applicationId) {
 
-        CustomerLoanResponseDto responseDto = loanApplicationService.getApplicationById(userId, applicationId);
+        LoanApplicationResponseDto responseDto = loanApplicationService.getApplicationById(userId, applicationId);
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 

@@ -1,5 +1,6 @@
 package com.tw.dto;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,14 +11,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class LoanApplicationResponseDto {
-    private long id;
-    private String applicationId;
-    private String loanStatus;
-    private double loanAmount;
-    private int loanTenure;
-    private double monthlyIncome;
-    private String propertyLocation;
+    private Long applicationNo;
+    private String dob;
+    private String mobileNo;
+    private String address;
+    private String aadharNo;
+    private String panNo;
+    private Double loanAmount;
+    private Double monthlyIncome;
     private String propertyName;
-    private double estimatedCost;
-    private long profileId;
+    private String location;
+    private String estimatedCost;
+    private String documentSubmitted;
+    private String status;
 }
