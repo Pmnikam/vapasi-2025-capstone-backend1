@@ -16,7 +16,7 @@
 
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
-        @Column(name = "app_id")
+
         private Long applicationId;
 
         @Column(name = "loan_amount", nullable = false)
@@ -46,8 +46,11 @@
 
         @OneToOne(mappedBy = "loanApplication", cascade = CascadeType.ALL)
         private LoanAccount loanAccount;
+        @Column(name="doc_type", nullable = false)
+        private String documentType;
 
-        @OneToOne(mappedBy = "loanApplication", cascade = CascadeType.ALL)
-        private LoanAppDocument binaryDocument;
+
+        // @OneToOne(mappedBy = "loanApplication", cascade = CascadeType.ALL)
+      //  private LoanAppDocument binaryDocument;
 
     }

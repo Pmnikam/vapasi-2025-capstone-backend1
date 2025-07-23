@@ -9,9 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/user/{userId}/loan")
+@RequestMapping("/users/{userId}/loan")
 public class LoanApplicationController {
-
     @Autowired
     LoanApplicationService loanApplicationService;
 

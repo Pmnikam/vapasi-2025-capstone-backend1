@@ -2,7 +2,6 @@ package com.tw.service.impl;
 
 import com.tw.dto.CustomerLoanRequestDto;
 import com.tw.dto.CustomerLoanResponseDto;
-import com.tw.entity.LoanAppDocument;
 import com.tw.entity.LoanApplication;
 import com.tw.entity.CustomerProfile;
 import com.tw.entity.UserAccount;
@@ -14,7 +13,6 @@ import com.tw.repository.UserAccountRepository;
 import com.tw.service.LoanApplicationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -100,22 +98,23 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
                 .estimatedCost(requestDto.getEstimatedCost())
                 .loanStatus("Pending Verification")
                 .isActive(true)
+                .documentType(requestDto.getDocumentType())
                 .customerProfile(profile)
                 .build();
 
-        MultipartFile customerFile = requestDto.getFileData();
-        LoanAppDocument loanAppDocument;
-        try{
-            loanAppDocument = LoanAppDocument.builder()
-                    .documentType(requestDto.getDocumentType())
-                    .fileData(customerFile.getBytes())
-                    .loanApplication(loanApp).build();
-        }
-        catch(Exception ex){
-            throw new FailedToReadDocument(ex.getMessage());
-        }
+//        MultipartFile customerFile = requestDto.getFileData();
+//        LoanAppDocument loanAppDocument;
+//        try{
+//            loanAppDocument = LoanAppDocument.builder()
+//                    .documentType(requestDto.getDocumentType())
+//                    .fileData(customerFile.getBytes())
+//                    .loanApplication(loanApp).build();
+//        }
+//        catch(Exception ex){
+//            throw new FailedToReadDocument(ex.getMessage());
+//        }
 
-        loanApp.setBinaryDocument(loanAppDocument);
+//        loanApp.setBinaryDocument(loanAppDocument);
         if(profile.getLoanApplications() == null)
         {
             profile.setLoanApplications(new ArrayList<>());
@@ -132,7 +131,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
 
         CustomerProfile profile = loanApp.getCustomerProfile();
-        LoanAppDocument document = loanApp.getBinaryDocument();
+//        LoanAppDocument document = loanApp.getBinaryDocument();
 
         return CustomerLoanResponseDto.builder()
                 .applicationNo(Long.valueOf(loanApp.getApplicationId()))
@@ -146,7 +145,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
                 .propertyName(loanApp.getPropertyName())
                 .location(loanApp.getLocation())
                 .estimatedCost(loanApp.getEstimatedCost())
-                .documentSubmitted(document != null ? document.getDocumentType() : "N/A")
+                .documentSubmitted(loanApp.getDocumentType())
                 .status(loanApp.getLoanStatus())
                 .build();
     }
