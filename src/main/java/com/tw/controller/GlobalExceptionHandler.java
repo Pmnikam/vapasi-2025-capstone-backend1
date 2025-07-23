@@ -22,23 +22,15 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-
-
     @ExceptionHandler(InvalidUserCredentialsException.class)
     public ResponseEntity<String> handleInvalidCredentials(InvalidUserCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleGenericException(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Something went wrong! Please try again later.");
-    }
-
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<ApiResponse<?>> handleUserAlreadyExists(UserAlreadyExistsException ex) {
-        ApiResponse<String> response = new ApiResponse<>("Signup failed", ex.getMessage());
-        return ResponseEntity.badRequest().body(response);
+    public ResponseEntity<ApiResponse> handleUserAlreadyExists(UserAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiResponse(ex.getMessage(), null));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -50,7 +42,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Object> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         assert ex.getRequiredType() != null;
-        String msg = String.format("Invalid value '%s' for parameter '%s'. Expected type: %s", ex.getValue(), ex.getName(), ex.getRequiredType().getSimpleName());
+        String msg = String.format("Invalid value '%s' for parameter '%s'. Expected type: %s",
+                ex.getValue(), ex.getName(), ex.getRequiredType().getSimpleName());
         logger.warn("Type mismatch error: {}", msg);
         return buildResponse(msg, HttpStatus.BAD_REQUEST);
     }
@@ -63,6 +56,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errors);
     }
 
+    // ✅ Only one generic exception handler
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse> handleAll(Exception ex) {
+        logger.error("Unhandled exception caught: ", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse("Internal Server Error", null));
+    }
+
     private ResponseEntity<Object> buildResponse(String message, HttpStatus status) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
@@ -70,15 +71,5 @@ public class GlobalExceptionHandler {
         body.put("status", status.value());
         return new ResponseEntity<>(body, status);
     }
-
-    private ResponseEntity<Object> buildResponse(String message, Object details, HttpStatus status) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("message", message);
-        body.put("details", details);
-        body.put("status", status.value());
-        return new ResponseEntity<>(body, status);
-    }
-
-
 }
+
