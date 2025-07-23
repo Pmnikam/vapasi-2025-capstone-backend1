@@ -173,6 +173,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         return true;
     }
 
+
     private LoanApplication getVerifiedLoanApplication(Long userId, Long applicationId){
         LoanApplication loanApp = loanApplicationRepository.findById(applicationId)
                 .orElseThrow(() -> new LoanApplicationNotFoundException(applicationId));
