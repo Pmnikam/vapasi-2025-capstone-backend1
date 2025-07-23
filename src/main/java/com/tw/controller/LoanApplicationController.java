@@ -2,7 +2,6 @@ package com.tw.controller;
 
 import com.tw.dto.CustomerLoanRequestDto;
 import com.tw.dto.CustomerLoanResponseDto;
-import com.tw.entity.LoanApplication;
 import com.tw.service.LoanApplicationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/user/{userId}/loan")
-public class LoanApplicationServiceController {
+public class LoanApplicationController {
 
     @Autowired
     LoanApplicationService loanApplicationService;
