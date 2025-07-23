@@ -1,6 +1,7 @@
 package com.tw.controller;
 
 
+import com.tw.dto.ApiResponse;
 import com.tw.exception.InvalidUserCredentialsException;
 import com.tw.exception.UserAlreadyExistsException;
 import org.slf4j.Logger;
@@ -21,10 +22,7 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<String> handleUserAlreadyExists(UserAlreadyExistsException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
-    }
+
 
     @ExceptionHandler(InvalidUserCredentialsException.class)
     public ResponseEntity<String> handleInvalidCredentials(InvalidUserCredentialsException ex) {
@@ -35,6 +33,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleGenericException(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Something went wrong! Please try again later.");
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse<?>> handleUserAlreadyExists(UserAlreadyExistsException ex) {
+        ApiResponse<String> response = new ApiResponse<>("Signup failed", ex.getMessage());
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

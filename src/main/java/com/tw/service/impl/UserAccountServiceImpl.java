@@ -39,7 +39,6 @@ public class UserAccountServiceImpl implements UserAccountService {
     @Override
     public UserAccountResponseDto authenticate(AuthenticateUserDto authenticateUserDto) {
         UserAccount user = userAccountRepository.findByEmail(authenticateUserDto.getEmail()).orElseThrow(() -> new InvalidUserCredentialsException("Invalid email or password"));
-
         if (!passwordEncoder.matches(authenticateUserDto.getPassword(), user.getPassword())) {
             throw new InvalidUserCredentialsException("Invalid email or password");
         }
