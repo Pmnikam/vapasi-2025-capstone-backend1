@@ -1,13 +1,17 @@
 package com.tw.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Entity
 @Table(name = "user_account")
 @Data
 @NoArgsConstructor
+
 public class UserAccount {
 
     @Id

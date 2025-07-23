@@ -11,6 +11,8 @@ import com.tw.repository.LoanApplicationRepository;
 import com.tw.repository.CustomerProfileRepository;
 import com.tw.repository.UserAccountRepository;
 import com.tw.service.LoanApplicationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,8 @@ import java.util.List;
 
 @Service
 public class LoanApplicationServiceImpl implements LoanApplicationService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoanApplicationServiceImpl.class);
 
     @Autowired
     LoanApplicationRepository loanApplicationRepository;
@@ -45,11 +49,17 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 
     @Override
     public Long submitApplication(Long userId, CustomerLoanRequestDto requestDto) {
+        LOGGER.info("Submitting loan application for userId: {}", userId);
+
         UserAccount userAccount = userAccountRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+                .orElseThrow(() ->{
+                    LOGGER.warn("User with ID {} not found", userId);
+                    return new UserNotFoundException(userId);
+                });
 
         double eligibleLoanAmount = 60 * (0.6 * requestDto.getMonthlyIncome());
         if(requestDto.getLoanAmount() > eligibleLoanAmount){
+            LOGGER.warn("Loan amount {} exceeds eligibility limit {}", requestDto.getLoanAmount(), eligibleLoanAmount);
             throw new LoanInEligibilityException("Requested amount exceeds. Max "+eligibleLoanAmount);
         }
 
@@ -60,6 +70,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
             if(status.equals("") ||
                     status.equals("")) //todo
             {
+                LOGGER.warn("Ongoing loan application found for userId {}: applicationId {}", userId, loanApp.getApplicationId());
                 throw new LoanInEligibilityException("Ongoing loan application exists. Application Id: "+loanApp.getApplicationId());
 
             }
@@ -74,6 +85,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
             dob = LocalDate.parse(requestDto.getDob(), fromatter);
         }
         catch (DateTimeParseException ex){
+            LOGGER.error("Failed to parse DOB: {}. Expected format dd-MM-yyyy", requestDto.getDob());
             throw new IllegalArgumentException("Invalid date format for DOB");
         }
 
@@ -87,6 +99,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
                 .build();
 
         if(existingProfile != null){
+            LOGGER.info("Overwriting existing customer profile for Aadhar: {}", requestDto.getAadharNo());
             profile.setPId(existingProfile.getPId());
         }
 
@@ -122,12 +135,14 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         profile.getLoanApplications().add(loanApp);
 
         customerProfileRepository.save(profile);
-
+        LOGGER.info("Loan application submitted successfully. Application ID: {}", loanApp.getApplicationId());
         return loanApp.getApplicationId();
     }
 
     @Override
     public CustomerLoanResponseDto getApplicationById(Long userId, Long applicationId){
+        LOGGER.info("Fetching loan application details for applicationId: {}, userId: {}", applicationId, userId);
+
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
 
         CustomerProfile profile = loanApp.getCustomerProfile();
@@ -152,34 +167,45 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 
     @Override
     public String getApplicationStatusById(Long userId, Long applicationId){
+        LOGGER.info("Fetching status for applicationId: {}, userId: {}", applicationId, userId);
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
         return loanApp.getLoanStatus();
     }
 
     @Override
     public Boolean changeApplicationStatusById(Long userId, Long applicationId, String status){
+        LOGGER.info("Changing application status for applicationId: {} by userId: {}", applicationId, userId);
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
         loanApp.setLoanStatus("approved"); //todo remove hardcoding
         loanApplicationRepository.save(loanApp);
+        LOGGER.info("Loan application {} status changed to {}", applicationId, status);
         return true;
 
     }
 
     public Boolean deleteApplicationById(Long userId, Long applicationId){
+        LOGGER.info("Deleting (soft) applicationId: {} by userId: {}", applicationId, userId);
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
         loanApp.setIsActive(false);
         loanApplicationRepository.save(loanApp);
+        LOGGER.info("ApplicationId: {} marked as inactive", applicationId);
         return true;
     }
 
 
     private LoanApplication getVerifiedLoanApplication(Long userId, Long applicationId){
+        LOGGER.info("Verifying ownership and existence of applicationId: {} for userId: {}", applicationId, userId);
         LoanApplication loanApp = loanApplicationRepository.findById(applicationId)
-                .orElseThrow(() -> new LoanApplicationNotFoundException(applicationId));
+                .orElseThrow(() ->{
+                    LOGGER.warn("Loan application not found: {}", applicationId);
+                    return new LoanApplicationNotFoundException(applicationId);
+                });
         if(!loanApp.getIsActive()){
+            LOGGER.warn("Loan application {} is already inactive (soft deleted)", applicationId);
             throw new LoanApplicationNotFoundException(applicationId); //soft delete done already
         }
         if (!loanApp.getCustomerProfile().getLoginAccount().getLoginId().equals(userId)) {
+            LOGGER.warn("Unauthorized access attempt by userId: {} for applicationId: {}", userId, applicationId);
             throw new UnauthorizedException("Application does not belong to this user");
         }
 
