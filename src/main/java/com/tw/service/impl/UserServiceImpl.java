@@ -1,9 +1,9 @@
 package com.tw.service.impl;
 
-import com.tw.dto.LoginDto;
-import com.tw.dto.UserDto;
-import com.tw.entity.Users;
-import com.tw.repository.UserRepository;
+import com.tw.dto.AuthenticateUserDto;
+import com.tw.dto.RegisterUserDto;
+import com.tw.entity.UserAccount;
+import com.tw.repository.UserAccountRepository;
 import com.tw.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,32 +13,35 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class UserServiceImpl implements UserService {
-
     @Autowired
-    private UserRepository userRepository;
+    private UserAccountRepository userAccountRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+
     @Override
-    public ResponseEntity<String> signup(UserDto userDto) {
-        if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
+    public ResponseEntity<String> registerUser(RegisterUserDto registerUserDto) {
+        if (userAccountRepository.findByEmail(registerUserDto.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().body("Email already exists");
         }
 
-        String hashedPwd = passwordEncoder.encode(userDto.getPassword());
-        Users user = new Users(userDto.getName(), userDto.getEmail(), hashedPwd, userDto.getRole());
-        userRepository.save(user);
+        String hashedPwd = passwordEncoder.encode(registerUserDto.getPassword());
+        UserAccount user = new UserAccount(registerUserDto.getName(),registerUserDto.getEmail(),
+                hashedPwd, registerUserDto.getRole());
+
+
+        userAccountRepository.save(user);
         return ResponseEntity.ok("Signup successful");
     }
 
     @Override
-    public ResponseEntity<String> login(LoginDto loginDto) {
+    public ResponseEntity<String> authenticate(AuthenticateUserDto authenticateUserDto) {
         try {
-            Users user = userRepository.findByEmail(loginDto.getEmail())
+            UserAccount user = userAccountRepository.findByEmail(authenticateUserDto.getEmail())
                     .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
-            if (!passwordEncoder.matches(loginDto.getPassword(), user.getPassword())) {
+            if (!passwordEncoder.matches(authenticateUserDto.getPassword(), user.getPassword())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("Invalid email or password");
             }

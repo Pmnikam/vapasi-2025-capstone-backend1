@@ -7,19 +7,23 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "loan_account")
+@Table(name = "loan_app_document")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LoanAccount {
+public class LoanAppDocument {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "account_id")
-    private Long accountId;
+    @Column(name = "doc_id")
+    private Long documentId;
 
-    @Column(name = "amt_dispersed")
-    private String amountDispersed;
+    @Column(name="doc_type", nullable = false)
+    private String documentType;
+
+    @Lob
+    @Column(name = "file_data", nullable = false, columnDefinition = "LONGBLOB")
+    private byte[] fileData;
 
     @OneToOne
     @JoinColumn(name = "app_id", nullable = false, unique = true)

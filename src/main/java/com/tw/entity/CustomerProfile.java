@@ -1,11 +1,13 @@
 package com.tw.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "customer_profile")
@@ -17,29 +19,27 @@ public class CustomerProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "profile_id")
-    private long pid;
+    private Long pId;
 
-    @NotBlank(message = "Date of birth is required")
-    private String dob;
+    @Column(nullable = false)
+    private LocalDate dob;
 
-    @NotBlank(message = "Mobile number is required")
-    private String mobile;
+    @Column(name = "mobile_no", nullable = false, length = 15)
+    private String mobileNo;
 
-    @NotBlank(message = "Address is required")
+    @Column(nullable = false)
     private String address;
 
-    @NotBlank(message = "Aadhar is required")
     @Column(name = "aadhar_no", nullable = false, unique = true, length = 12)
     private String aadharNo;
 
-    @NotBlank(message = "PAN is required")
     @Column(name = "pan_no", nullable = false, unique = true)
     private String panNo;
 
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private Users user;
+    @JoinColumn(name = "user_account_id", nullable = false, unique = true)
+    private UserAccount loginAccount;
 
-    @OneToOne(mappedBy = "customerProfile", cascade = CascadeType.ALL)
-    private LoanApplication loanApplication;
+    @OneToMany(mappedBy = "customerProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LoanApplication> loanApplications;
 }

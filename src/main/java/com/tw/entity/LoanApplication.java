@@ -1,7 +1,6 @@
 package com.tw.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,38 +8,46 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Data
+@Table(name = "loan_application")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class LoanApplication {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
-    @NotBlank(message = "Application ID is required")
+    @Column(name = "app_id")
     private String applicationId;
 
+    @Column(name = "loan_amount", nullable = false)
+    private Double loanAmount;
+
+    @Column(name = "loan_status", length = 50, nullable = false)
     private String loanStatus;
 
-    @Min(value = 10000, message = "Loan amount must be at least 10000")
-    private double loanAmount;
+    @Column(name = "monthly_income", nullable = false)
+    private Double monthlyIncome;
 
-    private int loanTenure;
+    @Column(name = "is_active",  nullable = false)
+    private Boolean isActive;
 
-    @Min(value = 1000, message = "Monthly income must be at least 1000")
-    private double monthlyIncome;
-
-    @NotBlank(message = "Property location is required")
-    private String propertyLocation;
-
-    @NotBlank(message = "Property name is required")
+    @Column(name = "property_name", nullable = false)
     private String propertyName;
 
-    @Min(value = 10000, message = "Estimated cost must be at least 10000")
-    private double estimatedCost;
+    @Column(nullable = false)
+    private String location;
 
-    @OneToOne
-    @JoinColumn(name = "profile_id")
+    @Column(name = "estimated_cost", nullable = false)
+    private String estimatedCost;
+
+    @ManyToOne
+    @JoinColumn(name = "profile_id", nullable = false)
     private CustomerProfile customerProfile;
+
+    @OneToOne(mappedBy = "loanApplication", cascade = CascadeType.ALL)
+    private LoanAccount loanAccount;
+
+    @OneToOne(mappedBy = "loanApplication", cascade = CascadeType.ALL)
+    private LoanAppDocument binaryDocument;
 
 }
