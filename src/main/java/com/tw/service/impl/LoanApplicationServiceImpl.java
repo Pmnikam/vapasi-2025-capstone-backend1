@@ -25,8 +25,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 
     @Autowired
     LoanApplicationRepository loanApplicationRepository;
-    @Autowired
-    LoanAppDocumentRepository loanAppDocumentRepository;
+
     @Autowired
     private UserAccountRepository userAccountRepository;
     @Autowired
@@ -134,7 +133,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 //        LoanAppDocument document = loanApp.getBinaryDocument();
 
         return LoanApplicationResponseDto.builder()
-                .applicationNo(Long.valueOf(loanApp.getApplicationId()))
+                .applicationNo(loanApp.getApplicationId())
                 .dob(profile.getDob().toString())
                 .mobileNo(profile.getMobileNo())
                 .address(profile.getAddress())
