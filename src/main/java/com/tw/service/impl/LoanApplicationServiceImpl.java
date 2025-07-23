@@ -46,7 +46,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     * */
 
     @Override
-    public String submitApplication(Long userId, CustomerLoanRequestDto requestDto) {
+    public Long submitApplication(Long userId, CustomerLoanRequestDto requestDto) {
         UserAccount userAccount = userAccountRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
