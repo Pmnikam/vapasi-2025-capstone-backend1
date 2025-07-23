@@ -2,12 +2,13 @@ package com.tw.service.impl;
 
 import com.tw.dto.AuthenticateUserDto;
 import com.tw.dto.RegisterUserDto;
+import com.tw.dto.UserResponseDto;
 import com.tw.entity.UserAccount;
+import com.tw.exception.InvalidUserCredentialsException;
+import com.tw.exception.UserAlreadyExistsException;
 import com.tw.repository.UserAccountRepository;
 import com.tw.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,39 +20,29 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-
     @Override
-    public ResponseEntity<String> registerUser(RegisterUserDto registerUserDto) {
+    public UserResponseDto registerUser(RegisterUserDto registerUserDto) {
         if (userAccountRepository.findByEmail(registerUserDto.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("Email already exists");
+            throw new UserAlreadyExistsException("Email already exists"); // or custom exception
         }
 
         String hashedPwd = passwordEncoder.encode(registerUserDto.getPassword());
-        UserAccount user = new UserAccount(registerUserDto.getName(),registerUserDto.getEmail(),
-                hashedPwd, registerUserDto.getRole());
 
+        UserAccount user = new UserAccount(registerUserDto.getName(), registerUserDto.getEmail(), hashedPwd, registerUserDto.getRole());
 
         userAccountRepository.save(user);
-        return ResponseEntity.ok("Signup successful");
+
+        return new UserResponseDto(user.getLoginId(), user.getName(), user.getEmail(), user.getRole());
     }
 
     @Override
-    public ResponseEntity<String> authenticate(AuthenticateUserDto authenticateUserDto) {
-        try {
-            UserAccount user = userAccountRepository.findByEmail(authenticateUserDto.getEmail())
-                    .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+    public UserResponseDto authenticate(AuthenticateUserDto authenticateUserDto) {
+        UserAccount user = userAccountRepository.findByEmail(authenticateUserDto.getEmail()).orElseThrow(() -> new InvalidUserCredentialsException("Invalid email or password"));
 
-            if (!passwordEncoder.matches(authenticateUserDto.getPassword(), user.getPassword())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body("Invalid email or password");
-            }
-
-            return ResponseEntity.ok("Login successful!");
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Something went wrong!");
+        if (!passwordEncoder.matches(authenticateUserDto.getPassword(), user.getPassword())) {
+            throw new InvalidUserCredentialsException("Invalid email or password");
         }
+
+        return new UserResponseDto(user.getLoginId(), user.getName(), user.getEmail(), user.getRole());
     }
 }

@@ -13,4 +13,5 @@ public class LoanAccountResponseDto {
     private long accountNo;
     private double amountDispersed;
     private long applicationId;
+
 }

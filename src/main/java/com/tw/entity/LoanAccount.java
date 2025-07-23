@@ -19,7 +19,7 @@ public class LoanAccount {
     private Long accountId;
 
     @Column(name = "amt_dispersed")
-    private String amountDispersed;
+    private double amountDispersed;
 
     @OneToOne
     @JoinColumn(name = "app_id", nullable = false, unique = true)

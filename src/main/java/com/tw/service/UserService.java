@@ -3,12 +3,13 @@ package com.tw.service;
 
 import com.tw.dto.AuthenticateUserDto;
 import com.tw.dto.RegisterUserDto;
-import org.springframework.http.ResponseEntity;
+import com.tw.dto.UserResponseDto;
 
 
 public interface UserService {
-    ResponseEntity<String> registerUser(RegisterUserDto userDto);
-    ResponseEntity<String> authenticate(AuthenticateUserDto loginDto);
+    UserResponseDto registerUser(RegisterUserDto userDto);
+
+    UserResponseDto authenticate(AuthenticateUserDto loginDto);
 
 
 }
