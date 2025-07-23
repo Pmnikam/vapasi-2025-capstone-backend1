@@ -1,7 +1,7 @@
 package com.tw.service.impl;
 
-import com.tw.dto.LoanApplicationRequestDto;
-import com.tw.dto.LoanApplicationResponseDto;
+import com.tw.dto.CustomerLoanRequestDto;
+import com.tw.dto.CustomerLoanResponseDto;
 import com.tw.entity.LoanApplication;
 import com.tw.entity.CustomerProfile;
 import com.tw.entity.UserAccount;
@@ -44,7 +44,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     * */
 
     @Override
-    public Long submitApplication(Long userId, LoanApplicationRequestDto requestDto) {
+    public Long submitApplication(Long userId, CustomerLoanRequestDto requestDto) {
         UserAccount userAccount = userAccountRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
@@ -127,13 +127,13 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     }
 
     @Override
-    public LoanApplicationResponseDto getApplicationById(Long userId, Long applicationId){
+    public CustomerLoanResponseDto getApplicationById(Long userId, Long applicationId){
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
 
         CustomerProfile profile = loanApp.getCustomerProfile();
 //        LoanAppDocument document = loanApp.getBinaryDocument();
 
-        return LoanApplicationResponseDto.builder()
+        return CustomerLoanResponseDto.builder()
                 .applicationNo(Long.valueOf(loanApp.getApplicationId()))
                 .dob(profile.getDob().toString())
                 .mobileNo(profile.getMobileNo())
