@@ -23,6 +23,8 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.tw.util.AppConstant.*;
+
 @Service
 public class LoanApplicationServiceImpl implements LoanApplicationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoanApplicationServiceImpl.class);
@@ -30,22 +32,9 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     @Autowired
     LoanApplicationRepository loanApplicationRepository;
     @Autowired
-    LoanAccountRepository loanAccountRepository;
-    @Autowired
     private UserAccountRepository userAccountRepository;
     @Autowired
     private CustomerProfileRepository customerProfileRepository;
-
-    /*
-    1. Check whether user exists.
-    2. Check whether he is eligible for loan
-    3. Check whether he has already applied for loan and it is not in either "Pending" or "awaiting" state
-    4. Check whether customer profile already exists. If so overwrite it.
-        To do this search by aadhar.
-    5. Overwrite or create customerProfile.
-    6. Create Loan Application
-    7. Return application Number
-    * */
 
     @Override
     public Long submitApplication(Long userId, LoanApplicationRequestDto requestDto) {
@@ -65,8 +54,8 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         List<LoanApplication> existingApps = loanApplicationRepository
                 .findByCustomerProfile_LoginAccount_LoginId(userId);
         boolean hasPendingStatus = existingApps.stream()
-                .anyMatch(app -> "Pending Customer Approval".equals(app.getLoanStatus())
-                        || "Pending User Approval".equals(app.getLoanStatus()));
+                .anyMatch(app -> PENDING_CUSTOMER.equals(app.getLoanStatus())
+                        || PENDING_ADMIN.equals(app.getLoanStatus()));
         if (hasPendingStatus) {
             throw new LoanInEligibilityException("Loan application is already in progress");
         }
@@ -107,7 +96,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
                 .propertyName(requestDto.getPropertyName())
                 .location(requestDto.getLocation())
                 .estimatedCost(requestDto.getEstimatedCost())
-                .loanStatus("Pending Admin Approval")
+                .loanStatus(PENDING_ADMIN)
                 .isActive(true)
                 .documentType(requestDto.getDocumentType())
                 .tenure(requestDto.getTenure())
@@ -116,20 +105,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
                 .customerProfile(profile)
                 .build();
 
-//        MultipartFile customerFile = requestDto.getFileData();
-//        LoanAppDocument loanAppDocument;
-//        try{
-//            loanAppDocument = LoanAppDocument.builder()
-//                    .documentType(requestDto.getDocumentType())
-//                    .fileData(customerFile.getBytes())
-//                    .loanApplication(loanApp).build();
-//        }
-//        catch(Exception ex){
-//            throw new FailedToReadDocument(ex.getMessage());
-//        }
-
-//        loanApp.setBinaryDocument(loanAppDocument);
-        if(profile.getLoanApplications() == null)
+     if(profile.getLoanApplications() == null)
         {
             profile.setLoanApplications(new ArrayList<>());
         }
@@ -147,7 +123,6 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
 
         CustomerProfile profile = loanApp.getCustomerProfile();
-//        LoanAppDocument document = loanApp.getBinaryDocument();
 
         return LoanApplicationResponseDto.builder()
                 .applicationNo(Long.valueOf(loanApp.getApplicationId()))
@@ -185,13 +160,13 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         String newStatus = loanAppStatusChangeRequestDto.getStatus();
         String oldStatus = loanApp.getLoanStatus();
         //todo check whether it is valid state
-        if(oldStatus.equals("Approved")){
+        if(oldStatus.equals(CUSTOMER_APPROVED)){
             throw new InvalidLoanStatusException("Loan is in approved state. Cannot change it.");
         }
-        if(newStatus.equals("Pending Customer Approval")){
+        if(newStatus.equals(PENDING_CUSTOMER)){
             throw new InvalidLoanStatusException("Not authorised to change to this state.Only possible state are Approved and Rejected");
         }
-        if(oldStatus.equals("Pending Admin Approval") && newStatus.equals("Approved")){
+        if(oldStatus.equals(PENDING_ADMIN) && newStatus.equals(CUSTOMER_APPROVED)){
             throw new InvalidLoanStatusException("Not authorized for this change");
         }
         loanApp.setLoanStatus(loanAppStatusChangeRequestDto.getStatus());
