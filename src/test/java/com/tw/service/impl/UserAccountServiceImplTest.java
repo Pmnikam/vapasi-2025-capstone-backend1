@@ -36,15 +36,22 @@ class UserAccountServiceImplTest {
         when(userAccountRepository.findByEmail(dto.getEmail())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(dto.getPassword())).thenReturn("hashedPassword");
 
-        UserAccount savedUser = new UserAccount("John", "john@example.com", "hashedPassword", "Customer");
-        savedUser.setLoginId(1L);
-
-        when(userAccountRepository.save(any(UserAccount.class))).thenReturn(savedUser);
+        doAnswer(invocation -> {
+            UserAccount userArg = invocation.getArgument(0);
+            userArg.setLoginId(1L);  // simulate DB assigning ID
+            return userArg;
+        }).when(userAccountRepository).save(any(UserAccount.class));
 
         UserAccountResponseDto response = userAccountService.registerUser(dto);
 
         assertNotNull(response);
+        assertEquals(1L, response.getId());  // now this will pass
+        assertEquals("John", response.getName());
         assertEquals("john@example.com", response.getEmail());
+        assertEquals("Customer", response.getRole());
+
+        verify(userAccountRepository).findByEmail(dto.getEmail());
+        verify(passwordEncoder).encode(dto.getPassword());
         verify(userAccountRepository).save(any(UserAccount.class));
     }
 
@@ -68,8 +75,14 @@ class UserAccountServiceImplTest {
 
         UserAccountResponseDto response = userAccountService.authenticate(dto);
 
+        assertNotNull(response);
+        assertEquals(1L, response.getId());
+        assertEquals("John", response.getName());
         assertEquals("john@example.com", response.getEmail());
         assertEquals("Customer", response.getRole());
+
+        verify(userAccountRepository).findByEmail(dto.getEmail());
+        verify(passwordEncoder).matches(dto.getPassword(), "hashedPassword");
     }
 
     @Test
@@ -90,6 +103,17 @@ class UserAccountServiceImplTest {
 
         assertThrows(InvalidUserCredentialsException.class, () -> userAccountService.authenticate(dto));
     }
+
+    @Test
+    void shouldThrowNullPointerForNullRegisterDto() {
+        assertThrows(NullPointerException.class, () -> userAccountService.registerUser(null));
+    }
+
+    @Test
+    void shouldThrowNullPointerForNullAuthenticateDto() {
+        assertThrows(NullPointerException.class, () -> userAccountService.authenticate(null));
+    }
+
 
   
 }

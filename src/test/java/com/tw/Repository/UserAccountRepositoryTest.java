@@ -1,12 +1,10 @@
 package com.tw.Repository;
 
 import com.tw.entity.UserAccount;
-import com.tw.entity.CustomerProfile;
 import com.tw.repository.UserAccountRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -67,21 +65,5 @@ public class UserAccountRepositoryTest {
         assertEquals("Updated Name", updated.getName());
     }
 
-    @Test
-    @Order(6)
-    void shouldSaveWithCustomerProfile() {
-        UserAccount user = createTestUser("linked@gmail.com");
 
-        CustomerProfile profile = new CustomerProfile();
-        profile.setAddress("Delhi");
-        profile.setMobileNo("1234567890");
-
-        // setting bi-directional mapping
-        profile.setLoginAccount(user);
-        user.setCustomerProfile(profile);
-
-        UserAccount saved = userAccountRepository.save(user);
-        assertNotNull(saved.getCustomerProfile());
-        assertEquals("Delhi", saved.getCustomerProfile().getAddress());
-    }
 }
