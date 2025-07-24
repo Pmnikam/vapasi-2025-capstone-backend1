@@ -9,9 +9,13 @@ import com.tw.exception.UserAlreadyExistsException;
 import com.tw.repository.UserAccountRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -38,14 +42,14 @@ class UserAccountServiceImplTest {
 
         doAnswer(invocation -> {
             UserAccount userArg = invocation.getArgument(0);
-            userArg.setLoginId(1L);  // simulate DB assigning ID
+            userArg.setLoginId(1L);
             return userArg;
         }).when(userAccountRepository).save(any(UserAccount.class));
 
         UserAccountResponseDto response = userAccountService.registerUser(dto);
 
         assertNotNull(response);
-        assertEquals(1L, response.getId());  // now this will pass
+        assertEquals(1L, response.getId());
         assertEquals("John", response.getName());
         assertEquals("john@example.com", response.getEmail());
         assertEquals("Customer", response.getRole());
@@ -58,8 +62,7 @@ class UserAccountServiceImplTest {
     @Test
     void shouldThrowExceptionWhenEmailExists() {
         RegisterUserDto dto = new RegisterUserDto("John", "john@example.com", "password123");
-        when(userAccountRepository.findByEmail(dto.getEmail()))
-                .thenReturn(Optional.of(new UserAccount()));
+        when(userAccountRepository.findByEmail(dto.getEmail())).thenReturn(Optional.of(new UserAccount()));
 
         assertThrows(UserAlreadyExistsException.class, () -> userAccountService.registerUser(dto));
     }
@@ -115,5 +118,4 @@ class UserAccountServiceImplTest {
     }
 
 
-  
 }

@@ -2,16 +2,18 @@ package com.tw.Repository;
 
 import com.tw.entity.UserAccount;
 import com.tw.repository.UserAccountRepository;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Unit tests for UserAccountRepository")
 public class UserAccountRepositoryTest {
 
     @Autowired
@@ -22,8 +24,7 @@ public class UserAccountRepositoryTest {
     }
 
     @Test
-    @Order(1)
-    void shouldSaveUser() {
+    void shouldSaveUserSuccessfully() {
         UserAccount user = createTestUser("surbhi@gmail.com");
         UserAccount saved = userAccountRepository.save(user);
         assertNotNull(saved.getLoginId());
@@ -31,8 +32,7 @@ public class UserAccountRepositoryTest {
     }
 
     @Test
-    @Order(2)
-    void shouldFindByEmail() {
+    void shouldFindUserByEmail() {
         UserAccount user = createTestUser("testuser@gmail.com");
         userAccountRepository.save(user);
 
@@ -42,20 +42,18 @@ public class UserAccountRepositoryTest {
     }
 
     @Test
-    @Order(3)
-    void shouldDuplicateEmailShouldFail() {
+    void shouldThrowExceptionForDuplicateEmail() {
         UserAccount user1 = createTestUser("duplicate@gmail.com");
         UserAccount user2 = createTestUser("duplicate@gmail.com");
 
         userAccountRepository.save(user1);
         assertThrows(Exception.class, () -> {
-            userAccountRepository.saveAndFlush(user2);  // flush forces DB constraint check
+            userAccountRepository.saveAndFlush(user2);
         });
     }
 
     @Test
-    @Order(4)
-    void shouldUpdateUserName() {
+    void shouldUpdateUserNameSuccessfully() {
         UserAccount user = createTestUser("updateuser@gmail.com");
         UserAccount saved = userAccountRepository.save(user);
 

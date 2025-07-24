@@ -1,4 +1,3 @@
-
 package com.tw.service.impl;
 
 
@@ -7,22 +6,28 @@ import com.tw.dto.LoanApplicationResponseDto;
 import com.tw.entity.CustomerProfile;
 import com.tw.entity.LoanApplication;
 import com.tw.entity.UserAccount;
-import com.tw.exception.*;
+import com.tw.exception.LoanInEligibilityException;
+import com.tw.exception.UnauthorizedException;
+import com.tw.exception.UserNotFoundException;
 import com.tw.repository.CustomerProfileRepository;
 import com.tw.repository.LoanApplicationRepository;
 import com.tw.repository.UserAccountRepository;
 import com.tw.util.AppConstant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 
-
 import java.time.LocalDate;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 class LoanApplicationServiceImplTest {
@@ -48,52 +53,25 @@ class LoanApplicationServiceImplTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        requestDto = LoanApplicationRequestDto.builder()
-                .aadharNo("123456789012")
-                .panNo("ABCDE1234F")
-                .dob("1990-01-01")
-                .mobileNo("9876543210")
-                .address("Some Address")
-                .monthlyIncome(50000.0)
-                .loanAmount(1000000.0)
-                .propertyName("Dream Home")
-                .location("City A")
-                .estimatedCost(1200000.0)
-                .documentType("ID Proof")
-                .build();
+        requestDto = LoanApplicationRequestDto.builder().aadharNo("123456789012").panNo("ABCDE1234F").dob("1990-01-01").mobileNo("9876543210").address("Some Address").monthlyIncome(50000.0).loanAmount(1000000.0).propertyName("Dream Home").location("City A").estimatedCost(1200000.0).documentType("ID Proof").build();
 
-        user = UserAccount.builder()
-                .loginId(1L)
-                .build();
+        user = UserAccount.builder().loginId(1L).build();
 
-        profile = CustomerProfile.builder()
-                .pId(1L)
-                .aadharNo("123456789012")
-                .loginAccount(user)
-                .build();
+        profile = CustomerProfile.builder().pId(1L).aadharNo("123456789012").loginAccount(user).build();
 
-        loanApplication = LoanApplication.builder()
-                .applicationId(100L)
-                .loanAmount(1000000.0)
-                .loanStatus("Pending Verification")
-                .isActive(true)
-                .customerProfile(profile)
-                .build();
+        loanApplication = LoanApplication.builder().applicationId(100L).loanAmount(1000000.0).loanStatus("Pending Verification").isActive(true).customerProfile(profile).build();
     }
 
     @Test
-    void shouldSubmitApplication_Success() {
+    void shouldSubmitApplicationSuccessfully() {
         when(userAccountRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(1L))
-                .thenReturn(Collections.emptyList());
-        when(customerProfileRepository.findByAadharNo("123456789012"))
-                .thenReturn(Optional.of(profile));
-        when(customerProfileRepository.save(any(CustomerProfile.class)))
-                .thenAnswer(i -> {
-                    CustomerProfile savedProfile = i.getArgument(0);
-                    savedProfile.getLoanApplications().get(0).setApplicationId(100L);
-                    return savedProfile;
-                });
+        when(loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(1L)).thenReturn(Collections.emptyList());
+        when(customerProfileRepository.findByAadharNo("123456789012")).thenReturn(Optional.of(profile));
+        when(customerProfileRepository.save(any(CustomerProfile.class))).thenAnswer(i -> {
+            CustomerProfile savedProfile = i.getArgument(0);
+            savedProfile.getLoanApplications().get(0).setApplicationId(100L);
+            return savedProfile;
+        });
 
         Long appId = loanApplicationService.submitApplication(1L, requestDto);
 
@@ -102,39 +80,34 @@ class LoanApplicationServiceImplTest {
     }
 
     @Test
-    void shouldSubmitApplication_UserNotFound() {
+    void shouldThrowExceptionWhenSubmittingApplicationWithNonExistentUser() {
         when(userAccountRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(UserNotFoundException.class,
-                () -> loanApplicationService.submitApplication(1L, requestDto));
+        assertThrows(UserNotFoundException.class, () -> loanApplicationService.submitApplication(1L, requestDto));
     }
 
     @Test
-    void shouldSubmitApplication_ExceedsEligibility() {
+    void shouldThrowExceptionWhenLoanAmountExceedsEligibility() {
         requestDto.setLoanAmount(99999999.0);
         when(userAccountRepository.findById(1L)).thenReturn(Optional.of(user));
-        assertThrows(LoanInEligibilityException.class,
-                () -> loanApplicationService.submitApplication(1L, requestDto));
+        assertThrows(LoanInEligibilityException.class, () -> loanApplicationService.submitApplication(1L, requestDto));
     }
 
     @Test
-    void shouldGetApplicationById_Success() {
+    void shouldReturnApplicationDetailsWhenValidIdProvided() {
         loanApplication.setCustomerProfile(profile);
         when(loanApplicationRepository.findById(100L)).thenReturn(Optional.of(loanApplication));
         String dobStr = LocalDate.now().minusYears(30).toString();
         profile.setDob(LocalDate.parse(dobStr));
         profile.setLoginAccount(user);
 
-        LoanApplicationResponseDto response =
-                loanApplicationService.getApplicationById(1L, 100L);
+        LoanApplicationResponseDto response = loanApplicationService.getApplicationById(1L, 100L);
 
         assertEquals("Pending Verification", response.getStatus());
     }
 
     @Test
-    void testGetAllApplicationsByUserId_returnsCorrectDtos() {
+    void shouldReturnAllApplicationsForGivenUserId() {
         Long userId = 1L;
-
-        // Create mock CustomerProfile
         CustomerProfile mockProfile = new CustomerProfile();
         mockProfile.setDob(LocalDate.of(1990, 1, 1));
         mockProfile.setMobileNo("9876543210");
@@ -142,7 +115,6 @@ class LoanApplicationServiceImplTest {
         mockProfile.setAadharNo("123412341234");
         mockProfile.setPanNo("ABCDE1234F");
 
-        // Create mock LoanApplication
         LoanApplication loanApp = new LoanApplication();
         loanApp.setApplicationId(100L);
         loanApp.setCustomerProfile(mockProfile);
@@ -158,14 +130,10 @@ class LoanApplicationServiceImplTest {
 
         List<LoanApplication> loanApps = List.of(loanApp);
 
-        // Stub repository call
-        when(loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(userId))
-                .thenReturn(loanApps);
+        when(loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(userId)).thenReturn(loanApps);
 
-        // Act
         List<LoanApplicationResponseDto> result = loanApplicationService.getAllApplicationsByUserId(userId);
 
-        // Assert
         assertEquals(1, result.size());
 
         LoanApplicationResponseDto dto = result.get(0);
@@ -186,24 +154,10 @@ class LoanApplicationServiceImplTest {
         assertEquals(AppConstant.INTEREST_RATE, dto.getInterestRate());
         assertEquals(5400.0, dto.getEmi());
     }
-//
-//    @Test
-//    void shouldChangeApplicationStatusById_Success() {
-//        loanApplication.setCustomerProfile(profile);
-//        profile.setLoginAccount(user);
-//
-//        when(loanApplicationRepository.findById(10L)).thenReturn(Optional.of(loanApplication));
-//
-//        LoanAppStatusChangeRequestDto dto = new LoanAppStatusChangeRequestDto("Approved");
-//
-//        LoanAppStatusChangeResponseDto response =
-//                loanApplicationService.changeApplicationStatusById(1L, 10L, dto);
-//
-//        assertEquals("Approved", loanApplication.getLoanStatus());
-//    }
+
 
     @Test
-    void shouldDeleteApplicationById_Success() {
+    void shouldDeleteApplicationSuccessfullyById() {
         loanApplication.setCustomerProfile(profile);
         profile.setLoginAccount(user);
 
@@ -213,11 +167,12 @@ class LoanApplicationServiceImplTest {
         assertTrue(result);
         assertFalse(loanApplication.getIsActive());
     }
+
     @Test
-    public void shouldSubmitApplication_InvalidDate_ThrowsException() {
+    public void shouldThrowExceptionWhenSubmittingApplicationWithInvalidDate() {
         Long userId = 1L;
         LoanApplicationRequestDto requestDto = new LoanApplicationRequestDto();
-        requestDto.setDob("31-31-2020"); // Invalid date
+        requestDto.setDob("31-31-2020");
         requestDto.setMonthlyIncome(50000.0);
         requestDto.setLoanAmount(100000.0);
         requestDto.setAadharNo("123456789012");
@@ -235,15 +190,12 @@ class LoanApplicationServiceImplTest {
     }
 
     @Test
-    void shouldSubmitApplication_existingAadharLinkedToAnotherUser() {
-        CustomerProfile anotherProfile = CustomerProfile.builder()
-                .loginAccount(UserAccount.builder().loginId(2L).build())
-                .build();
+    void shouldThrowExceptionWhenAadharIsLinkedToAnotherUser() {
+        CustomerProfile anotherProfile = CustomerProfile.builder().loginAccount(UserAccount.builder().loginId(2L).build()).build();
         when(userAccountRepository.findById(1L)).thenReturn(Optional.of(user));
         when(customerProfileRepository.findByAadharNo("123456789012")).thenReturn(Optional.ofNullable(anotherProfile));
 
-        assertThrows(UnauthorizedException.class,
-                () -> loanApplicationService.submitApplication(1L, getValidDto()));
+        assertThrows(UnauthorizedException.class, () -> loanApplicationService.submitApplication(1L, getValidDto()));
     }
 
     private LoanApplicationRequestDto getValidDto() {
@@ -266,24 +218,21 @@ class LoanApplicationServiceImplTest {
     }
 
     @Test
-    void shouldSubmitApplication_loanInProgress() {
+    void shouldThrowExceptionWhenLoanAlreadyInProgressForUser() {
         when(userAccountRepository.findById(1L)).thenReturn(Optional.of(user));
         when(customerProfileRepository.findByAadharNo("123456789012")).thenReturn(Optional.ofNullable(profile));
 
         LoanApplication pendingApp = LoanApplication.builder().loanStatus("Pending Customer Approval").build();
-        when(loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(1L))
-                .thenReturn(List.of(pendingApp));
+        when(loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(1L)).thenReturn(List.of(pendingApp));
 
-        assertThrows(LoanInEligibilityException.class,
-                () -> loanApplicationService.submitApplication(1L, getValidDto()));
+        assertThrows(LoanInEligibilityException.class, () -> loanApplicationService.submitApplication(1L, getValidDto()));
     }
 
     @Test
-    void shouldGetApplicationById_wrongUser() {
+    void shouldThrowExceptionWhenUserDoesNotOwnApplication() {
         loanApplication.getCustomerProfile().getLoginAccount().setLoginId(2L);
         when(loanApplicationRepository.findById(10L)).thenReturn(Optional.of(loanApplication));
-        assertThrows(UnauthorizedException.class,
-                () -> loanApplicationService.getApplicationById(1L, 10L));
+        assertThrows(UnauthorizedException.class, () -> loanApplicationService.getApplicationById(1L, 10L));
     }
 
 

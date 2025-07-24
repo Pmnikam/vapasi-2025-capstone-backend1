@@ -5,9 +5,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
 class HomeloanAppApplicationTests {
-
     @Test
-    void contextLoads() {
+    void mainShouldStartApplicationContext() {
+        HomeloanAppApplication.main(new String[]{});
     }
+
 
 }

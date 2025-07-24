@@ -9,7 +9,6 @@ import com.tw.exception.LoanInactiveException;
 import com.tw.exception.LoanNotFoundException;
 import com.tw.repository.LoanApplicationRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,7 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,17 +37,11 @@ class AdminServiceImplTest {
     @BeforeEach
     void setup() {
         CustomerProfile profile = CustomerProfile.builder().pId(1L).build();
-        loanApp = LoanApplication.builder()
-                .applicationId(100L)
-                .loanStatus("Pending Admin Approval")
-                .isActive(true)
-                .customerProfile(profile)
-                .build();
+        loanApp = LoanApplication.builder().applicationId(100L).loanStatus("Pending Admin Approval").isActive(true).customerProfile(profile).build();
     }
 
     @Test
-    @DisplayName("getAllCustomerLoanInfo - should return loan info list")
-    void shouldReturnAllCustomerLoanInfo() {
+    void shouldReturnAllCustomerLoanInfoList() {
         List<CustomerLoanInfoDto> list = List.of(mock(CustomerLoanInfoDto.class));
         when(loanApplicationRepository.fetchAllCustomerLoanApplications()).thenReturn(list);
 
@@ -58,18 +51,15 @@ class AdminServiceImplTest {
     }
 
     @Test
-    @DisplayName("getAllCustomerLoanInfo - should throw LoanNotFoundException when empty")
-    void shouldThrowWhenNoLoanInfoFound() {
+    void shouldThrowExceptionWhenNoLoanInfoFound() {
         when(loanApplicationRepository.fetchAllCustomerLoanApplications()).thenReturn(Collections.emptyList());
 
         assertThrows(LoanNotFoundException.class, () -> adminService.getAllCustomerLoanInfo());
     }
 
     @Test
-    @DisplayName("processLoanDecision - approve - should update loan status")
-    void shouldApproveLoan() {
-        when(loanApplicationRepository.findByApplicationIdAndCustomerProfile_pId(100L, 1L))
-                .thenReturn(Optional.of(loanApp));
+    void shouldUpdateLoanStatusWhenApproved() {
+        when(loanApplicationRepository.findByApplicationIdAndCustomerProfile_pId(100L, 1L)).thenReturn(Optional.of(loanApp));
 
         String message = adminService.processLoanDecision(1L, 100L, "approve");
 
@@ -79,10 +69,8 @@ class AdminServiceImplTest {
     }
 
     @Test
-    @DisplayName("processLoanDecision - reject - should update loan status")
-    void shouldRejectLoan() {
-        when(loanApplicationRepository.findByApplicationIdAndCustomerProfile_pId(100L, 1L))
-                .thenReturn(Optional.of(loanApp));
+    void shouldUpdateLoanStatusWhenRejected() {
+        when(loanApplicationRepository.findByApplicationIdAndCustomerProfile_pId(100L, 1L)).thenReturn(Optional.of(loanApp));
 
         String message = adminService.processLoanDecision(1L, 100L, "reject");
 
@@ -91,44 +79,32 @@ class AdminServiceImplTest {
     }
 
     @Test
-    @DisplayName("processLoanDecision - should throw for inactive loan")
-    void shouldThrowIfLoanIsInactive() {
+    void shouldThrowExceptionWhenLoanIsInactive() {
         loanApp.setIsActive(false);
-        when(loanApplicationRepository.findByApplicationIdAndCustomerProfile_pId(100L, 1L))
-                .thenReturn(Optional.of(loanApp));
+        when(loanApplicationRepository.findByApplicationIdAndCustomerProfile_pId(100L, 1L)).thenReturn(Optional.of(loanApp));
 
-        assertThrows(LoanInactiveException.class, () ->
-                adminService.processLoanDecision(1L, 100L, "approve"));
+        assertThrows(LoanInactiveException.class, () -> adminService.processLoanDecision(1L, 100L, "approve"));
     }
 
     @Test
-    @DisplayName("processLoanDecision - should throw for invalid status")
-    void shouldThrowIfInvalidLoanStatus() {
+    void shouldThrowExceptionForInvalidLoanStatus() {
         loanApp.setLoanStatus("Approved");
-        when(loanApplicationRepository.findByApplicationIdAndCustomerProfile_pId(100L, 1L))
-                .thenReturn(Optional.of(loanApp));
+        when(loanApplicationRepository.findByApplicationIdAndCustomerProfile_pId(100L, 1L)).thenReturn(Optional.of(loanApp));
 
-        assertThrows(InvalidLoanStatusException.class, () ->
-                adminService.processLoanDecision(1L, 100L, "approve"));
+        assertThrows(InvalidLoanStatusException.class, () -> adminService.processLoanDecision(1L, 100L, "approve"));
     }
 
     @Test
-    @DisplayName("processLoanDecision - should throw for invalid action")
-    void shouldThrowIfActionInvalid() {
-        when(loanApplicationRepository.findByApplicationIdAndCustomerProfile_pId(100L, 1L))
-                .thenReturn(Optional.of(loanApp));
+    void shouldThrowExceptionForUnsupportedAction() {
+        when(loanApplicationRepository.findByApplicationIdAndCustomerProfile_pId(100L, 1L)).thenReturn(Optional.of(loanApp));
 
-        assertThrows(IllegalArgumentException.class, () ->
-                adminService.processLoanDecision(1L, 100L, "invalid"));
+        assertThrows(IllegalArgumentException.class, () -> adminService.processLoanDecision(1L, 100L, "invalid"));
     }
 
     @Test
-    @DisplayName("processLoanDecision - should throw if loan not found")
-    void shouldThrowIfLoanNotFound() {
-        when(loanApplicationRepository.findByApplicationIdAndCustomerProfile_pId(100L, 1L))
-                .thenReturn(Optional.empty());
+    void shouldThrowExceptionWhenLoanNotFound() {
+        when(loanApplicationRepository.findByApplicationIdAndCustomerProfile_pId(100L, 1L)).thenReturn(Optional.empty());
 
-        assertThrows(LoanApplicationNotFoundException.class, () ->
-                adminService.processLoanDecision(1L, 100L, "approve"));
+        assertThrows(LoanApplicationNotFoundException.class, () -> adminService.processLoanDecision(1L, 100L, "approve"));
     }
 }
