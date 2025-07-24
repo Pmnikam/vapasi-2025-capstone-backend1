@@ -55,7 +55,7 @@ class LoanApplicationServiceImplTest {
                 .loanAmount(1000000.0)
                 .propertyName("Dream Home")
                 .location("City A")
-                .estimatedCost(String.valueOf(1200000.0))
+                .estimatedCost(1200000.0)
                 .documentType("ID Proof")
                 .build();
 

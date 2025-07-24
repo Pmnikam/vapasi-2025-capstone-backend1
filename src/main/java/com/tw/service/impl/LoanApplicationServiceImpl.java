@@ -147,7 +147,6 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
 
         CustomerProfile profile = loanApp.getCustomerProfile();
-//        LoanAppDocument document = loanApp.getBinaryDocument();
 
         return LoanApplicationResponseDto.builder()
                 .applicationNo(Long.valueOf(loanApp.getApplicationId()))
@@ -202,17 +201,16 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         LoanApplication loanApp = loanApplicationRepository.findById(applicationId)
                 .orElseThrow(() -> {
                     LOGGER.warn("Loan application not found: {}", applicationId);
-                    return new LoanApplicationNotFoundException(applicationId);
+                    return new LoanApplicationNotFoundException("Loan Application not found: " + applicationId);
                 });
         if(!loanApp.getIsActive()){
             LOGGER.warn("Loan application {} is already inactive (soft deleted)", applicationId);
-            throw new LoanApplicationNotFoundException(applicationId); //soft delete done already
+            throw new LoanApplicationNotFoundException(applicationId.toString()); //soft delete done already
         }
         if (!loanApp.getCustomerProfile().getLoginAccount().getLoginId().equals(userId)) {
             LOGGER.warn("Unauthorized access attempt by userId: {} for applicationId: {}", userId, applicationId);
             throw new UnauthorizedException("Application does not belong to this user");
         }
-
         return loanApp;
     }
 
