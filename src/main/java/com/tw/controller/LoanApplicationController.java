@@ -1,5 +1,7 @@
 package com.tw.controller;
 
+import com.tw.dto.LoanAppStatusChangeRequestDto;
+import com.tw.dto.LoanAppStatusChangeResponseDto;
 import com.tw.dto.LoanApplicationRequestDto;
 import com.tw.dto.LoanApplicationResponseDto;
 import com.tw.service.LoanApplicationService;
@@ -43,14 +45,15 @@ public class LoanApplicationController {
         return new ResponseEntity<>(status, HttpStatus.OK);
     }
 
-    @PutMapping("/{applicationId}/status")
-    public ResponseEntity<Boolean> changeApplicationStatus(
+    @PutMapping("/{applicationId}")
+    public ResponseEntity<LoanAppStatusChangeResponseDto> changeApplicationStatus(
             @PathVariable Long userId,
             @PathVariable Long applicationId,
-            @RequestParam String status) {
+            @Valid @RequestBody LoanAppStatusChangeRequestDto requestDto) {
 
-        Boolean updated = loanApplicationService.changeApplicationStatusById(userId, applicationId, status);
-        return new ResponseEntity<>(updated, HttpStatus.OK);
+        LoanAppStatusChangeResponseDto reponseDto = loanApplicationService.changeApplicationStatusById(userId, applicationId, requestDto);
+        return new ResponseEntity<>(reponseDto, HttpStatus.OK);
+
     }
 
     @DeleteMapping("/{applicationId}")

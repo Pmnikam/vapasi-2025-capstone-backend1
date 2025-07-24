@@ -47,7 +47,7 @@
         @OneToOne(mappedBy = "loanApplication", cascade = CascadeType.ALL)
         private LoanAccount loanAccount;
 
-        @Column(name="doc_type", nullable = false)
+        @Column(name="doc_type")
         private String documentType;
 
         @Column(name = "interest_rate", nullable = false)

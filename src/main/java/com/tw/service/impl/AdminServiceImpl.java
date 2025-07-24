@@ -1,8 +1,6 @@
 package com.tw.service.impl;
 import com.tw.entity.LoanApplication;
-import com.tw.exception.InvalidLoanStatusException;
-import com.tw.exception.LoanApplicationNotFoundException;
-import com.tw.exception.LoanNotFoundException;
+import com.tw.exception.*;
 import com.tw.projection.CustomerLoanInfo;
 import com.tw.projection.LoanApplicationView;
 import com.tw.repository.LoanApplicationRepository;
@@ -41,6 +39,10 @@ public class AdminServiceImpl implements AdminService {
         LoanApplication loanApp = fetchLoanApplication(customerId, loanId);
         validateLoanStatusForProcessing(loanApp);
 
+        if (!loanApp.getIsActive()) {
+            throw new LoanInactiveException("Loan application is not active and cannot be processed.");
+        }
+
         updateLoanStatusBasedOnAction(loanApp, action);
         loanApplicationRepository.save(loanApp);
 
@@ -66,7 +68,7 @@ public class AdminServiceImpl implements AdminService {
         if ("approve".equalsIgnoreCase(action)) {
             loanApp.setLoanStatus("Pending Customer Approval");
         } else if ("reject".equalsIgnoreCase(action)) {
-            loanApp.setLoanStatus("Rejected by Admin");
+            loanApp.setLoanStatus("Rejected");
         } else {
             throw new IllegalArgumentException("Invalid action: " + action + ". Use 'approve' or 'reject'.");
         }

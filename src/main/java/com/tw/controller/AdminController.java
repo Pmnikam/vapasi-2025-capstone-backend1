@@ -27,8 +27,6 @@ public class AdminController {
         List<LoanApplicationView> loanInfoList = adminService.getCustomerLoanInfoById(id);
         return ResponseEntity.ok(loanInfoList);
     }
-//    PUT /users/2/loan/5?action=approve
-//    PUT /users/2/loan/5?action=reject
     @PutMapping("/users/{customerId}/loan/{loanId}")
     public ResponseEntity<String> processLoanDecision(
             @PathVariable Long customerId,

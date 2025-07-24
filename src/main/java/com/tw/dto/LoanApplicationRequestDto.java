@@ -49,8 +49,6 @@ public class LoanApplicationRequestDto {
     @Positive(message = "Estimated cost must be positive")
     private Double estimatedCost;
 
-    /*Identity Document*/
-    @NotBlank(message = "Document Type cannot be null")
     private String documentType;
 
     @NotNull(message = "Tenure is required")
