@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @CrossOrigin
 @RestController
 @RequestMapping("/users/{userId}/loan")
@@ -36,13 +38,12 @@ public class LoanApplicationController {
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
-    @GetMapping("/{applicationId}/status")
-    public ResponseEntity<String> getApplicationStatusById(
-            @PathVariable Long userId,
-            @PathVariable Long applicationId) {
-
-        String status = loanApplicationService.getApplicationStatusById(userId, applicationId);
-        return new ResponseEntity<>(status, HttpStatus.OK);
+    @GetMapping()
+    public ResponseEntity<List<LoanApplicationResponseDto>> getAllApplicationsByUserId(
+            @PathVariable Long userId) {
+        List<LoanApplicationResponseDto> loanApplicationResponseDtos
+                = loanApplicationService.getAllApplicationsByUserId(userId);
+        return new ResponseEntity<>(loanApplicationResponseDtos, HttpStatus.OK);
     }
 
     @PutMapping("/{applicationId}")
@@ -51,9 +52,9 @@ public class LoanApplicationController {
             @PathVariable Long applicationId,
             @Valid @RequestBody LoanAppStatusChangeRequestDto requestDto) {
 
-        LoanAppStatusChangeResponseDto reponseDto = loanApplicationService.changeApplicationStatusById(userId, applicationId, requestDto);
+        LoanAppStatusChangeResponseDto reponseDto =
+                loanApplicationService.changeApplicationStatusById(userId, applicationId, requestDto);
         return new ResponseEntity<>(reponseDto, HttpStatus.OK);
-
     }
 
     @DeleteMapping("/{applicationId}")

@@ -105,7 +105,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
                 .customerProfile(profile)
                 .build();
 
-     if(profile.getLoanApplications() == null)
+        if(profile.getLoanApplications() == null)
         {
             profile.setLoanApplications(new ArrayList<>());
         }
@@ -145,11 +145,40 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     }
 
     @Override
-    public String getApplicationStatusById(Long userId, Long applicationId){
-        LOGGER.info("Fetching status for applicationId: {}, userId: {}", applicationId, userId);
-        LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
-        return loanApp.getLoanStatus();
+    public List<LoanApplicationResponseDto> getAllApplicationsByUserId(Long userId) {
+        LOGGER.info("Fetching all existing applications for userId: {}", userId);
+        //todo check whether user id is valid
+        List<LoanApplication> loanApplicationList
+                = loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(userId);
+        List<LoanApplicationResponseDto> responseDtoList = new ArrayList<>();
+
+        for (LoanApplication loanApp : loanApplicationList) {
+            CustomerProfile profile = loanApp.getCustomerProfile();
+
+            LoanApplicationResponseDto responseDto = LoanApplicationResponseDto.builder()
+                    .applicationNo(Long.valueOf(loanApp.getApplicationId()))
+                    .dob(profile.getDob().toString())
+                    .mobileNo(profile.getMobileNo())
+                    .address(profile.getAddress())
+                    .aadharNo(profile.getAadharNo())
+                    .panNo(profile.getPanNo())
+                    .loanAmount(loanApp.getLoanAmount())
+                    .monthlyIncome(loanApp.getMonthlyIncome())
+                    .propertyName(loanApp.getPropertyName())
+                    .location(loanApp.getLocation())
+                    .estimatedCost(loanApp.getEstimatedCost())
+                    .documentSubmitted(loanApp.getDocumentType())
+                    .status(loanApp.getLoanStatus())
+                    .tenure(loanApp.getTenure())
+                    .interestRate(AppConstant.INTEREST_RATE)
+                    .emi(loanApp.getEmi())
+                    .build();
+
+            responseDtoList.add(responseDto);
+        }
+        return responseDtoList;
     }
+
 
     @Override
     public LoanAppStatusChangeResponseDto changeApplicationStatusById(Long userId, Long applicationId, LoanAppStatusChangeRequestDto loanAppStatusChangeRequestDto){
