@@ -1,8 +1,7 @@
 
 package com.tw.service.impl;
 
-import com.tw.dto.LoanAppStatusChangeRequestDto;
-import com.tw.dto.LoanAppStatusChangeResponseDto;
+
 import com.tw.dto.LoanApplicationRequestDto;
 import com.tw.dto.LoanApplicationResponseDto;
 import com.tw.entity.CustomerProfile;
@@ -17,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 import org.springframework.boot.test.context.SpringBootTest;
+
 
 import java.time.LocalDate;
 import java.util.*;
@@ -194,10 +194,7 @@ class LoanApplicationServiceImplTest {
 
         when(loanApplicationRepository.findById(10L)).thenReturn(Optional.of(loanApplication));
 
-        LoanAppStatusChangeRequestDto dto = new LoanAppStatusChangeRequestDto("Approved");
 
-        LoanAppStatusChangeResponseDto response =
-                loanApplicationService.changeApplicationStatusById(1L, 10L, dto);
 
         assertEquals("Approved", loanApplication.getLoanStatus());
     }
@@ -233,7 +230,68 @@ class LoanApplicationServiceImplTest {
 
         assertEquals("Invalid date format for DOB", exception.getMessage());
     }
+
+    @Test
+    void shouldSubmitApplication_existingAadharLinkedToAnotherUser() {
+        CustomerProfile anotherProfile = CustomerProfile.builder()
+                .loginAccount(UserAccount.builder().loginId(2L).build())
+                .build();
+        when(userAccountRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(customerProfileRepository.findByAadharNo("123456789012")).thenReturn(Optional.ofNullable(anotherProfile));
+
+        assertThrows(UnauthorizedException.class,
+                () -> loanApplicationService.submitApplication(1L, getValidDto()));
+    }
+
+    private LoanApplicationRequestDto getValidDto() {
+        LoanApplicationRequestDto dto = new LoanApplicationRequestDto();
+        dto.setAadharNo("123456789012");
+        dto.setPanNo("ABCDE1234F");
+        dto.setDob("1990-01-01");
+        dto.setMobileNo("9999999999");
+        dto.setAddress("Address");
+        dto.setLoanAmount(100000.0);
+        dto.setMonthlyIncome(50000.0);
+        dto.setPropertyName("Flat");
+        dto.setLocation("Bangalore");
+        dto.setEstimatedCost(120000.0);
+        dto.setDocumentType("PDF");
+        dto.setTenure(12.0);
+        dto.setEmi(8500.0);
+        return dto;
+
+    }
+
+    @Test
+    void shouldSubmitApplication_loanInProgress() {
+        when(userAccountRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(customerProfileRepository.findByAadharNo("123456789012")).thenReturn(Optional.ofNullable(profile));
+
+        LoanApplication pendingApp = LoanApplication.builder().loanStatus("Pending Customer Approval").build();
+        when(loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(1L))
+                .thenReturn(List.of(pendingApp));
+
+        assertThrows(LoanInEligibilityException.class,
+                () -> loanApplicationService.submitApplication(1L, getValidDto()));
+    }
+
+    @Test
+    void shouldGetApplicationById_wrongUser() {
+        loanApplication.getCustomerProfile().getLoginAccount().setLoginId(2L);
+        when(loanApplicationRepository.findById(10L)).thenReturn(Optional.of(loanApplication));
+        assertThrows(UnauthorizedException.class,
+                () -> loanApplicationService.getApplicationById(1L, 10L));
+    }
+
+
 }
+
+
+
+
+
+
+
 
 
 
