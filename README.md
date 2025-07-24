@@ -1,8 +1,11 @@
 Home Loan Management Backend API
+
+
 A RESTful backend application that enables users to apply for home loans online and allows admins to review and manage applications. This project simplifies the loan process by eliminating the need for in-person visits, while offering tools like EMI and eligibility calculators.
 
  Features
-� User Features:
+ 
+ User Features:
 - Register and Login securely
 - Apply for a home loan with income, personal, and property details
 - Upload required documents
@@ -16,7 +19,6 @@ A RESTful backend application that enables users to apply for home loans online 
 - View all user applications
 
 Technologies Used
-
 - Java 17
 - Spring Boot 3
 - Spring Data JPA
@@ -40,9 +42,10 @@ Running the Project
 -sql
 CREATE DATABASE home_loan;
 
+
 Test Cases
-Controller layer tested using @SpringBootTest
-Service layer unit tested with @SpringBootTest
-Repository layer tested using @DataJpaTest
-Validations tested(e.g : userAccount, LoanApplication, CustomerProfile, LoanAccount)
+- Controller layer tested using @SpringBootTest
+- Service layer unit tested with @SpringBootTest
+- Repository layer tested using @DataJpaTest
+- Validations tested(e.g : userAccount, LoanApplication, CustomerProfile, LoanAccount)
 
