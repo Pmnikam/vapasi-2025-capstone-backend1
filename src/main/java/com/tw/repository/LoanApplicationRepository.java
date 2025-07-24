@@ -11,7 +11,6 @@ import java.util.Optional;
 public interface LoanApplicationRepository extends JpaRepository<LoanApplication, Long> {
     List<LoanApplication> findByCustomerProfile_LoginAccount_LoginId(Long userId);
 
-
     @Query("SELECT new com.tw.dto.CustomerLoanInfoDto(" +
             "ua.loginId, ua.name, ua.email, cp.pId, la.applicationId, cp.dob, cp.mobileNo, " +
             "cp.address, cp.aadharNo, cp.panNo, la.loanAmount, la.monthlyIncome, la.propertyName, " +

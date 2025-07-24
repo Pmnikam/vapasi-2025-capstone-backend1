@@ -31,7 +31,7 @@ public class LoanAppDocumentRepositoryTest {
     private UserAccountRepository userRepository;
 
     private LoanApplication createLoanApplication() {
-        UserAccount user = new UserAccount("Rohit", "rohit@example.com", "pass123", "USER");
+        UserAccount user = new UserAccount("Rohit", "rohit@example.com", "pass123", "Customer");
         user = userRepository.save(user);
 
         CustomerProfile profile = CustomerProfile.builder()
@@ -48,6 +48,10 @@ public class LoanAppDocumentRepositoryTest {
                 .loanAmount(300000.0)
                 .loanStatus("Submitted")
                 .monthlyIncome(45000.0)
+                .emi(12000.0)
+                .interestRate(8.0)
+                .tenure(15.0)
+                .documentType("Aadhar")
                 .isActive(true)
                 .propertyName("Green Villa")
                 .location("Kanpur")

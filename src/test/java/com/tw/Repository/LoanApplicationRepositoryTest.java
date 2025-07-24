@@ -1,5 +1,6 @@
 package com.tw.Repository;
 
+import com.tw.dto.CustomerLoanInfoDto;
 import com.tw.entity.CustomerProfile;
 import com.tw.entity.LoanApplication;
 import com.tw.entity.UserAccount;
@@ -12,12 +13,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DataJpaTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -52,19 +55,21 @@ public class LoanApplicationRepositoryTest {
                 .build();
         return customerProfileRepository.save(profile);
     }
-
     private LoanApplication createLoanApplication(CustomerProfile profile) {
-        LoanApplication loan = LoanApplication.builder()
-                .loanAmount(250000.0)
-                .loanStatus("PENDING")
-                .monthlyIncome(40000.0)
-                .isActive(true)
-                .propertyName("Green Villa")
-                .location("Pune")
-                .estimatedCost(300000.0)
-                .customerProfile(profile)
-                .build();
-        return loanApplicationRepository.save(loan);
+        LoanApplication loan = new LoanApplication();
+        loan.setCustomerProfile(profile);
+        loan.setDocumentType("Aadhar"); // or whatever valid type
+        loan.setEmi(12000.0); // ✅ MUST NOT be null
+        loan.setEstimatedCost(150000.0);
+        loan.setInterestRate(8.5);
+        loan.setIsActive(true);
+        loan.setLoanAmount(100000.0);
+        loan.setLoanStatus("PENDING");
+        loan.setLocation("Chennai");
+        loan.setMonthlyIncome(45000.0);
+        loan.setPropertyName("Sunshine Residency");
+        loan.setTenure(15.0);
+        return loan;
     }
 
     @Test
@@ -88,8 +93,7 @@ public class LoanApplicationRepositoryTest {
                 .build();
 
         user.setCustomerProfile(profile);
-
-        userAccountRepository.save(user);
+        userAccountRepository.save(user); // saves both user and profile due to cascade if enabled
 
         LoanApplication loanApplication = new LoanApplication();
         loanApplication.setCustomerProfile(profile);
@@ -99,11 +103,16 @@ public class LoanApplicationRepositoryTest {
         loanApplication.setEstimatedCost(600000.0);
         loanApplication.setLocation("Test City");
         loanApplication.setPropertyName("Test Property");
+        loanApplication.setEmi(15000.0);
+        loanApplication.setInterestRate(7.5); // ✅ FIXED: Required field
+        loanApplication.setTenure(10.0);        // ✅ FIXED: If NOT NULL
+        loanApplication.setDocumentType("Aadhar"); // ✅ FIXED: If NOT NULL
         loanApplication.setIsActive(true);
 
         loanApplicationRepository.saveAndFlush(loanApplication);
 
-        List<LoanApplication> result = loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(user.getLoginId());
+        List<LoanApplication> result =
+                loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(user.getLoginId());
 
         assertThat(result).isNotEmpty();
     }
@@ -115,45 +124,101 @@ public class LoanApplicationRepositoryTest {
         CustomerProfile profile = createCustomerProfile(user);
         LoanApplication loan = createLoanApplication(profile);
 
-        assertThat(loan.getApplicationId()).isNotNull();
-        assertThat(loan.getLoanStatus()).isEqualTo("PENDING");
-    }
+        LoanApplication savedLoan = loanApplicationRepository.save(loan); // ✅ persist
 
+        assertThat(savedLoan.getApplicationId()).isNotNull(); // will be generated
+        assertThat(savedLoan.getLoanStatus()).isEqualTo("PENDING");
+    }
     @Test
     @DisplayName("Should find loan application by ID")
     void shouldFindLoanApplicationById() {
         UserAccount user = createUser();
-        CustomerProfile profile = createCustomerProfile(user);
-        LoanApplication loan = createLoanApplication(profile);
+        user = userAccountRepository.save(user);
 
-        Optional<LoanApplication> result = loanApplicationRepository.findById(loan.getApplicationId());
+        CustomerProfile profile = createCustomerProfile(user);
+        profile = customerProfileRepository.save(profile);
+
+        LoanApplication loan = createLoanApplication(profile);
+        loan.setLoanAmount(250000.0); // set expected value
+        LoanApplication savedLoan = loanApplicationRepository.save(loan);
+
+        Optional<LoanApplication> result = loanApplicationRepository.findById(savedLoan.getApplicationId());
 
         assertThat(result).isPresent();
         assertThat(result.get().getLoanAmount()).isEqualTo(250000.0);
     }
 
     @Test
-    @DisplayName("Should find all loan applications")
-    void shouldFindAllLoanApplications() {
+    @DisplayName("Should fetch all customer loan applications as DTOs")
+    void shouldFetchAllCustomerLoanApplicationsAsDto() {
         UserAccount user = createUser();
         CustomerProfile profile = createCustomerProfile(user);
-        createLoanApplication(profile);
-        createLoanApplication(profile); // Save second
+        LoanApplication loan = createLoanApplication(profile);
+        loanApplicationRepository.save(loan);
+
+        List<CustomerLoanInfoDto> result = loanApplicationRepository.fetchAllCustomerLoanApplications();
+
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getEmail()).isEqualTo(user.getEmail());
+    }
+
+    @Test
+    @DisplayName("Should find loan by application ID and profile ID")
+    void shouldFindByApplicationIdAndCustomerProfileId() {
+        UserAccount user = createUser();
+        CustomerProfile profile = createCustomerProfile(user);
+        LoanApplication loan = createLoanApplication(profile);
+        loan = loanApplicationRepository.save(loan);
+
+        Optional<LoanApplication> result = loanApplicationRepository
+                .findByApplicationIdAndCustomerProfile_pId(loan.getApplicationId(), profile.getPId());
+
+        assertThat(result).isPresent();
+    }
+
+    @Test
+    @DisplayName("Should throw DataIntegrityViolationException when EMI is null")
+    void shouldThrowWhenEmiIsNull() {
+        UserAccount user = createUser();
+        CustomerProfile profile = createCustomerProfile(user);
+
+        LoanApplication loan = createLoanApplication(profile);
+        loan.setEmi(null); // EMI is not nullable
+
+        assertThrows(DataIntegrityViolationException.class, () -> {
+            loanApplicationRepository.saveAndFlush(loan);
+        });
+    }
+
+    @Test
+    @DisplayName("Should find all loan applications")
+    void shouldFindAllLoanApplications() {
+        UserAccount user = userAccountRepository.save(createUser());
+        CustomerProfile profile = customerProfileRepository.save(createCustomerProfile(user));
+
+        LoanApplication loan1 = loanApplicationRepository.save(createLoanApplication(profile));
+        LoanApplication loan2 = loanApplicationRepository.save(createLoanApplication(profile));
 
         List<LoanApplication> result = loanApplicationRepository.findAll();
 
         assertThat(result).hasSizeGreaterThanOrEqualTo(2);
     }
+
     @Test
     @DisplayName("Should find by customer login ID")
     void shouldFindByCustomerProfile_LoginAccount_LoginId() {
-        UserAccount user = createUser();
+        UserAccount user = userAccountRepository.save(createUser());
         CustomerProfile profile = createCustomerProfile(user);
-        createLoanApplication(profile);
-
-        List<LoanApplication> result = loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(user.getLoginId());
+        profile = customerProfileRepository.save(profile);
+        LoanApplication loan = createLoanApplication(profile);
+        loanApplicationRepository.save(loan);
+        List<LoanApplication> result =
+                loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(user.getLoginId());
 
         assertThat(result).isNotEmpty();
-        assertThat(result.get(0).getCustomerProfile().getLoginAccount().getLoginId()).isEqualTo(user.getLoginId());
+        assertThat(result.get(0).getCustomerProfile().getLoginAccount().getLoginId())
+                .isEqualTo(user.getLoginId());
     }
+
+
 }

@@ -1,6 +1,8 @@
 
 package com.tw.service.impl;
 
+import com.tw.dto.LoanAppStatusChangeRequestDto;
+import com.tw.dto.LoanAppStatusChangeResponseDto;
 import com.tw.dto.LoanApplicationRequestDto;
 import com.tw.dto.LoanApplicationResponseDto;
 import com.tw.entity.CustomerProfile;
@@ -48,7 +50,7 @@ class LoanApplicationServiceImplTest {
         requestDto = LoanApplicationRequestDto.builder()
                 .aadharNo("123456789012")
                 .panNo("ABCDE1234F")
-                .dob("01-01-1990")
+                .dob("1990-01-01")
                 .mobileNo("9876543210")
                 .address("Some Address")
                 .monthlyIncome(50000.0)
@@ -138,15 +140,18 @@ class LoanApplicationServiceImplTest {
     }
 
     @Test
-    void shouldtChangeApplicationStatusById_Success() {
+    void shouldChangeApplicationStatusById_Success() {
         loanApplication.setCustomerProfile(profile);
         profile.setLoginAccount(user);
 
-        when(loanApplicationRepository.findById(100L)).thenReturn(Optional.of(loanApplication));
+        when(loanApplicationRepository.findById(10L)).thenReturn(Optional.of(loanApplication));
 
-        Boolean result = loanApplicationService.changeApplicationStatusById(1L, 100L, "approved");
-        assertTrue(result);
-        assertEquals("approved", loanApplication.getLoanStatus());
+        LoanAppStatusChangeRequestDto dto = new LoanAppStatusChangeRequestDto("Approved");
+
+        LoanAppStatusChangeResponseDto response =
+                loanApplicationService.changeApplicationStatusById(1L, 10L, dto);
+
+        assertEquals("Approved", loanApplication.getLoanStatus());
     }
 
     @Test
