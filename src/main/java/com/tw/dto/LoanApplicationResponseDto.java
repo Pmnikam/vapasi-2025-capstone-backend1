@@ -21,7 +21,10 @@ public class LoanApplicationResponseDto {
     private Double monthlyIncome;
     private String propertyName;
     private String location;
-    private String estimatedCost;
+    private Double estimatedCost;
     private String documentSubmitted;
     private String status;
+    private Double interestRate;
+    private Double tenure;
+    private Double emi;
 }

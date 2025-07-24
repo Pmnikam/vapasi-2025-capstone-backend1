@@ -3,6 +3,7 @@ package com.tw.controller;
 import com.tw.dto.LoanApplicationRequestDto;
 import com.tw.dto.LoanApplicationResponseDto;
 import com.tw.service.LoanApplicationService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +18,7 @@ public class LoanApplicationController {
     @PostMapping(consumes = "application/json")
     public ResponseEntity<Long> submitApplication(
             @PathVariable Long userId,
-            @RequestBody LoanApplicationRequestDto requestDto) {
+            @Valid @RequestBody LoanApplicationRequestDto requestDto) {
 
         Long applicationId = loanApplicationService.submitApplication(userId, requestDto);
         return new ResponseEntity<>(applicationId, HttpStatus.CREATED);

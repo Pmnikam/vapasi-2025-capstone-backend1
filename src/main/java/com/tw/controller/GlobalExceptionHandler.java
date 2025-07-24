@@ -2,8 +2,7 @@ package com.tw.controller;
 
 
 import com.tw.dto.ApiResponse;
-import com.tw.exception.InvalidUserCredentialsException;
-import com.tw.exception.UserAlreadyExistsException;
+import com.tw.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -21,6 +20,26 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(LoanInEligibilityException.class)
+    public ResponseEntity<String> handleLoanInEligibilityException(LoanInEligibilityException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(LoanApplicationNotFoundException.class)
+    public ResponseEntity<String> handleLoanApplicationNotFoundException(LoanApplicationNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<String> handleUserNotFoundException(UserNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<String> handleUnauthorizedException(UnauthorizedException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    }
 
     @ExceptionHandler(InvalidUserCredentialsException.class)
     public ResponseEntity<String> handleInvalidCredentials(InvalidUserCredentialsException ex) {
