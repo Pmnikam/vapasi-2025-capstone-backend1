@@ -6,14 +6,17 @@ import com.tw.entity.LoanApplication;
 import com.tw.entity.CustomerProfile;
 import com.tw.entity.UserAccount;
 import com.tw.exception.*;
+import com.tw.repository.LoanAppDocumentRepository;
 import com.tw.repository.LoanApplicationRepository;
 import com.tw.repository.CustomerProfileRepository;
 import com.tw.repository.UserAccountRepository;
 import com.tw.service.LoanApplicationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.tw.util.AppConstant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -26,7 +29,8 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 
     @Autowired
     LoanApplicationRepository loanApplicationRepository;
-
+    @Autowired
+    LoanAppDocumentRepository loanAppDocumentRepository;
     @Autowired
     private UserAccountRepository userAccountRepository;
     @Autowired
@@ -52,32 +56,31 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
                     return new UserNotFoundException(userId);
                 });
 
+        CustomerProfile existingProfile = customerProfileRepository
+                .findByAadharNo(requestDto.getAadharNo()).orElse(null);
+        if (existingProfile != null && !existingProfile.getLoginAccount().getLoginId().equals(userId)) {
+            throw new UnauthorizedException("Aadhar number already linked to another user");
+        }
+
+        List<LoanApplication> existingApps = loanApplicationRepository
+                .findByCustomerProfile_LoginAccount_LoginId(userId);
+        boolean hasPendingStatus = existingApps.stream()
+                .anyMatch(app -> "PendingCustomerApproval".equals(app.getLoanStatus())
+                        || "PendingUserApproval".equals(app.getLoanStatus()));
+        if (hasPendingStatus) {
+            throw new LoanInEligibilityException("Loan application is already in progress");
+        }
+
         double eligibleLoanAmount = 60 * (0.6 * requestDto.getMonthlyIncome());
         if(requestDto.getLoanAmount() > eligibleLoanAmount){
             LOGGER.warn("Loan amount {} exceeds eligibility limit {}", requestDto.getLoanAmount(), eligibleLoanAmount);
             throw new LoanInEligibilityException("Requested amount exceeds. Max "+eligibleLoanAmount);
         }
 
-        List<LoanApplication> existingApps = loanApplicationRepository
-                .findByCustomerProfile_LoginAccount_LoginId(userId);
-        for(LoanApplication loanApp : existingApps){
-            String status = loanApp.getLoanStatus();
-            if(status.equals("") ||
-                    status.equals("")) //todo
-            {
-                LOGGER.warn("Ongoing loan application found for userId {}: applicationId {}", userId, loanApp.getApplicationId());
-                throw new LoanInEligibilityException("Ongoing loan application exists. Application Id: "+loanApp.getApplicationId());
-
-            }
-        }
-
-        CustomerProfile existingProfile = customerProfileRepository
-                .findByAadharNo(requestDto.getAadharNo()).orElse(null);
-
-        DateTimeFormatter fromatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         LocalDate dob;
         try{
-            dob = LocalDate.parse(requestDto.getDob(), fromatter);
+            dob = LocalDate.parse(requestDto.getDob(), formatter);
         }
         catch (DateTimeParseException ex){
             LOGGER.error("Failed to parse DOB: {}. Expected format dd-MM-yyyy", requestDto.getDob());
@@ -104,9 +107,12 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
                 .propertyName(requestDto.getPropertyName())
                 .location(requestDto.getLocation())
                 .estimatedCost(requestDto.getEstimatedCost())
-                .loanStatus("Pending Verification")
+                .loanStatus("PendingAdminApproval")
                 .isActive(true)
                 .documentType(requestDto.getDocumentType())
+                .tenure(requestDto.getTenure())
+                .emi(requestDto.getEmi())
+                .interestRate(AppConstant.INTEREST_RATE)
                 .customerProfile(profile)
                 .build();
 
@@ -144,7 +150,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 //        LoanAppDocument document = loanApp.getBinaryDocument();
 
         return LoanApplicationResponseDto.builder()
-                .applicationNo(loanApp.getApplicationId())
+                .applicationNo(Long.valueOf(loanApp.getApplicationId()))
                 .dob(profile.getDob().toString())
                 .mobileNo(profile.getMobileNo())
                 .address(profile.getAddress())
@@ -157,6 +163,9 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
                 .estimatedCost(loanApp.getEstimatedCost())
                 .documentSubmitted(loanApp.getDocumentType())
                 .status(loanApp.getLoanStatus())
+                .tenure(loanApp.getTenure())
+                .interestRate(AppConstant.INTEREST_RATE)
+                .emi(loanApp.getEmi())
                 .build();
     }
 

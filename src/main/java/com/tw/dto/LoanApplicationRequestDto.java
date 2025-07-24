@@ -34,7 +34,7 @@ public class LoanApplicationRequestDto {
     @Positive(message = "Loan amount must be positive")
     private Double loanAmount;
 
-    @NotBlank(message = "Monthly income is required")
+    @NotNull(message = "Monthly income is required")
     @Positive(message = "Monthly income must be positive")
     private Double monthlyIncome;
 
@@ -44,13 +44,19 @@ public class LoanApplicationRequestDto {
     @NotBlank(message = "Property location is required")
     private String location;
 
-    @NotBlank(message = "Estimated cost is required")
-    private String estimatedCost;
+    @NotNull(message = "Estimated cost is required")
+    @Positive(message = "Estimated cost must be positive")
+    private Double estimatedCost;
 
     /*Identity Document*/
     @NotBlank(message = "Document Type cannot be null")
     private String documentType;
 
-    @NotNull(message = "Document file is required")
-    private MultipartFile fileData;
+    @NotNull(message = "Tenure is required")
+    @Positive(message = "Tenure must be positive")
+    private Double tenure;
+
+    @NotNull(message = "EMI is required")
+    @Positive(message = "EMI must be positive")
+    private Double emi;
 }

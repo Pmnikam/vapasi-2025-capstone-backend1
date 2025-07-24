@@ -38,7 +38,7 @@
         private String location;
 
         @Column(name = "estimated_cost", nullable = false)
-        private String estimatedCost;
+        private Double estimatedCost;
 
         @ManyToOne
         @JoinColumn(name = "profile_id", nullable = false)
@@ -50,6 +50,14 @@
         @Column(name="doc_type", nullable = false)
         private String documentType;
 
+        @Column(name = "interest_rate", nullable = false)
+        private Double interestRate;
+
+        @Column(name = "tenure", nullable = false)
+        private Double tenure;
+
+        @Column(nullable = false)
+        private Double emi;
 
         // @OneToOne(mappedBy = "loanApplication", cascade = CascadeType.ALL)
       //  private LoanAppDocument binaryDocument;
