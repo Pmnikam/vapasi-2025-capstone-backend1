@@ -5,6 +5,8 @@ import com.tw.dto.LoanAppStatusChangeRequestDto;
 import com.tw.dto.LoanAppStatusChangeResponseDto;
 import com.tw.dto.LoanApplicationRequestDto;
 import com.tw.dto.LoanApplicationResponseDto;
+import com.tw.exception.UnauthorizedException;
+import com.tw.exception.UserNotFoundException;
 import com.tw.service.LoanApplicationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -105,6 +107,55 @@ class LoanApplicationControllerTest {
         mockMvc.perform(delete("/users/{userId}/loan/{applicationId}", userId, appId)).andExpect(status().isOk()).andExpect(content().string("true"));
     }
 
+    @Test
+    void shouldReturnNotFoundIfUserNotFound() throws Exception {
+        Long userId = 100L;
+
+        LoanApplicationRequestDto requestDto = new LoanApplicationRequestDto();
+        requestDto.setDob("1990-01-01");
+        requestDto.setMonthlyIncome(40000.0);
+        requestDto.setLoanAmount(200000.0);
+        requestDto.setAadharNo("123456789012");
+        requestDto.setPanNo("ABCDE1234F");
+        requestDto.setMobileNo("9876543210");
+        requestDto.setAddress("Chennai");
+        requestDto.setPropertyName("Dream House");
+        requestDto.setLocation("Chennai");
+        requestDto.setEstimatedCost(250000.0);
+        requestDto.setDocumentType("Sale Deed");
+        requestDto.setTenure(15.0);
+        requestDto.setEmi(15000.0);
+
+        when(loanApplicationService.submitApplication(eq(userId), any())).thenThrow(new UserNotFoundException("User with id 100 not found"));
+
+        mockMvc.perform(post("/users/{userId}/loan", userId).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(requestDto))).andExpect(status().isNotFound()).andExpect(content().string("User with id 100 not found"));
+    }
+
+
+    @Test
+    void shouldReturnUnauthorizedIfAadharLinkedToAnotherUser() throws Exception {
+        Long userId = 1L;
+        LoanApplicationRequestDto requestDto = new LoanApplicationRequestDto();
+        requestDto.setDob("1990-01-01");
+        requestDto.setMonthlyIncome(40000.0);
+        requestDto.setLoanAmount(200000.0);
+        requestDto.setAadharNo("123456789012");
+        requestDto.setPanNo("ABCDE1234F");
+        requestDto.setMobileNo("9876543210");
+        requestDto.setAddress("Chennai");
+        requestDto.setPropertyName("Dream House");
+        requestDto.setLocation("Chennai");
+        requestDto.setEstimatedCost(250000.0);
+        requestDto.setDocumentType("Sale Deed");
+        requestDto.setTenure(15.0);
+        requestDto.setEmi(15000.0);
+
+        when(loanApplicationService.submitApplication(eq(userId), any())).thenThrow(new UnauthorizedException("Aadhar number already linked to another user"));
+
+        mockMvc.perform(post("/users/{userId}/loan", userId).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(requestDto))).andExpect(status().isUnauthorized()).andExpect(content().string("Aadhar number already linked to another user"));
+    }
+
+
     @TestConfiguration
     static class TestConfig {
         @Bean
@@ -117,8 +168,7 @@ class LoanApplicationControllerTest {
     static class TestSecurityConfig {
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-            http.csrf(AbstractHttpConfigurer::disable)
-                    .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+            http.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
             return http.build();
         }
     }

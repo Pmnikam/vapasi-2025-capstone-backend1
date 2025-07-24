@@ -1,6 +1,7 @@
 package com.tw.controller;
 
 import com.tw.dto.CustomerLoanInfoDto;
+import com.tw.exception.LoanInactiveException;
 import com.tw.service.AdminService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,14 +19,13 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AdminController.class)
-@Import({AdminControllerTest.TestAdminConfig.class, AdminControllerTest.TestSecurityConfig.class})
+@Import({AdminControllerTest.TestAdminConfig.class, AdminControllerTest.TestSecurityConfig.class, GlobalExceptionHandler.class})
 class AdminControllerTest {
 
     @Autowired
@@ -85,6 +85,12 @@ class AdminControllerTest {
         mockMvc.perform(get("/admin/users")).andExpect(status().isInternalServerError());
     }
 
+    @Test
+    void shouldThrowLoanInactiveException() throws Exception {
+        doThrow(new LoanInactiveException("Loan inactive")).when(adminService).processLoanDecision(1L, 100L, "approve");
+
+        mockMvc.perform(put("/admin/users/1/loan/100").param("action", "approve")).andExpect(status().isBadRequest()).andExpect(content().string("Loan inactive"));
+    }
 
     @TestConfiguration
     static class TestAdminConfig {

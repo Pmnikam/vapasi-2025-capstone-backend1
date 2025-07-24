@@ -107,4 +107,6 @@ class AdminServiceImplTest {
 
         assertThrows(LoanApplicationNotFoundException.class, () -> adminService.processLoanDecision(1L, 100L, "approve"));
     }
+
+
 }
