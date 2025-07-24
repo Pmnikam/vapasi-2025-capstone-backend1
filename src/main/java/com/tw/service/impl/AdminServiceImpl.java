@@ -6,9 +6,7 @@ import com.tw.repository.LoanApplicationRepository;
 import com.tw.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
-
 import static com.tw.util.AppConstant.*;
 
 @Service
@@ -24,7 +22,6 @@ public class AdminServiceImpl implements AdminService {
         }
         return loanInfoList;
     }
-
     @Override
     public String processLoanDecision(Long customerId, Long loanId, String action) {
         LoanApplication loanApp = fetchLoanApplication(customerId, loanId);
@@ -59,14 +56,14 @@ public class AdminServiceImpl implements AdminService {
         if (APPROVE.equalsIgnoreCase(action)) {
             loanApp.setLoanStatus(PENDING_CUSTOMER);
         } else if (REJECT.equalsIgnoreCase(action)) {
-            loanApp.setLoanStatus(CUSTOMER_REJECTED);
+            loanApp.setLoanStatus(REJECTED);
         } else {
             throw new IllegalArgumentException("Invalid action: " + action + ". Use 'approve' or 'reject'.");
         }
     }
 
     private String buildSuccessMessage(Long loanId, Long customerId, String action) {
-        String status = action.equalsIgnoreCase("approve") ? "approved" : "rejected";
+        String status = action.equalsIgnoreCase(APPROVE) ? APPROVED : REJECTED;
         return "Loan with ID " + loanId + " has been " + status + " successfully for customer ID " + customerId;
     }
 
