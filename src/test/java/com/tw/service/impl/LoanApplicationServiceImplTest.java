@@ -180,8 +180,6 @@ class LoanApplicationServiceImplTest {
 
         assertEquals("Invalid date format for DOB", exception.getMessage());
     }
-
-
 }
 
 

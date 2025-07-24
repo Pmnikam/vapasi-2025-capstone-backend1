@@ -79,7 +79,6 @@ public class CustomerProfileRepositoryTest {
 
             assertEquals("Mumbai", updated.getAddress());
         }
-
     }
 
 

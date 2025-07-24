@@ -61,7 +61,7 @@ public class LoanApplicationRepositoryTest {
                 .isActive(true)
                 .propertyName("Green Villa")
                 .location("Pune")
-                .estimatedCost(300000)
+                .estimatedCost(300000.0)
                 .customerProfile(profile)
                 .build();
         return loanApplicationRepository.save(loan);
@@ -144,7 +144,6 @@ public class LoanApplicationRepositoryTest {
 
         assertThat(result).hasSizeGreaterThanOrEqualTo(2);
     }
-
     @Test
     @DisplayName("Should find by customer login ID")
     void shouldFindByCustomerProfile_LoginAccount_LoginId() {
