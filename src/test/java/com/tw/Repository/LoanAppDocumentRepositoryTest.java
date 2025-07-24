@@ -1,7 +1,6 @@
 package com.tw.Repository;
 
 import com.tw.entity.*;
-import com.tw.repository.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -52,7 +51,7 @@ public class LoanAppDocumentRepositoryTest {
                 .isActive(true)
                 .propertyName("Green Villa")
                 .location("Kanpur")
-                .estimatedCost("350000")
+                .estimatedCost(350000.0)
                 .customerProfile(profile)
                 .build();
         return applicationRepository.save(application);
