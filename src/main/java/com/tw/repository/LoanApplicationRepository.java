@@ -14,7 +14,7 @@ public interface LoanApplicationRepository extends JpaRepository<LoanApplication
     @Query("SELECT new com.tw.dto.CustomerLoanInfoDto(" +
             "ua.loginId, ua.name, ua.email, cp.pId, la.applicationId, cp.dob, cp.mobileNo, " +
             "cp.address, cp.aadharNo, cp.panNo, la.loanAmount, la.monthlyIncome, la.propertyName, " +
-            "la.location, la.estimatedCost, la.documentType, la.loanStatus) " +
+            "la.location, la.estimatedCost, la.documentType, la.loanStatus , la.tenure, la.emi) " +
             "FROM LoanApplication la " +
             "JOIN la.customerProfile cp " +
             "JOIN cp.loginAccount ua " +

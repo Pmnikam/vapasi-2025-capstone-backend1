@@ -6,5 +6,6 @@ public class AppConstant {
     public static final String PENDING_CUSTOMER = "Pending Customer Approval";
     public static final String CUSTOMER_APPROVED = "Approved";
     public static final String CUSTOMER_REJECTED = "Rejected";
-
+    public static final String APPROVE = "approve";
+    public static final String REJECT = "reject";
 }

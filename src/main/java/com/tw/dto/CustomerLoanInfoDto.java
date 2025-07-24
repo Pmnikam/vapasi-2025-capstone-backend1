@@ -25,5 +25,7 @@ public class CustomerLoanInfoDto {
     private Double estimatedCost;
     private String documentSubmitted;
     private String status;
+    Double tenure;
+    Double emi;
 
 }

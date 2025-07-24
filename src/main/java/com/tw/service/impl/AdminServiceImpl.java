@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static com.tw.util.AppConstant.*;
+
 @Service
 public class AdminServiceImpl implements AdminService {
     @Autowired
@@ -47,17 +49,17 @@ public class AdminServiceImpl implements AdminService {
 
     private void validateLoanStatusForProcessing(LoanApplication loanApp) {
         String currentStatus = loanApp.getLoanStatus().trim();
-        if (!"Pending Admin Approval".equalsIgnoreCase(currentStatus)) {
+        if (!PENDING_ADMIN.equalsIgnoreCase(currentStatus)) {
             throw new InvalidLoanStatusException(
                     "Cannot process loan. Current status is '" + currentStatus + "'");
         }
     }
 
     private void updateLoanStatusBasedOnAction(LoanApplication loanApp, String action) {
-        if ("approve".equalsIgnoreCase(action)) {
-            loanApp.setLoanStatus("Pending Customer Approval");
-        } else if ("reject".equalsIgnoreCase(action)) {
-            loanApp.setLoanStatus("Rejected");
+        if (APPROVE.equalsIgnoreCase(action)) {
+            loanApp.setLoanStatus(PENDING_CUSTOMER);
+        } else if (REJECT.equalsIgnoreCase(action)) {
+            loanApp.setLoanStatus(CUSTOMER_REJECTED);
         } else {
             throw new IllegalArgumentException("Invalid action: " + action + ". Use 'approve' or 'reject'.");
         }

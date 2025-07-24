@@ -93,7 +93,7 @@ public class LoanApplicationRepositoryTest {
                 .build();
 
         user.setCustomerProfile(profile);
-        userAccountRepository.save(user); // saves both user and profile due to cascade if enabled
+        userAccountRepository.save(user);
 
         LoanApplication loanApplication = new LoanApplication();
         loanApplication.setCustomerProfile(profile);
@@ -104,9 +104,9 @@ public class LoanApplicationRepositoryTest {
         loanApplication.setLocation("Test City");
         loanApplication.setPropertyName("Test Property");
         loanApplication.setEmi(15000.0);
-        loanApplication.setInterestRate(7.5); // ✅ FIXED: Required field
-        loanApplication.setTenure(10.0);        // ✅ FIXED: If NOT NULL
-        loanApplication.setDocumentType("Aadhar"); // ✅ FIXED: If NOT NULL
+        loanApplication.setInterestRate(7.5);
+        loanApplication.setTenure(10.0);
+        loanApplication.setDocumentType("Aadhar");
         loanApplication.setIsActive(true);
 
         loanApplicationRepository.saveAndFlush(loanApplication);
@@ -124,9 +124,8 @@ public class LoanApplicationRepositoryTest {
         CustomerProfile profile = createCustomerProfile(user);
         LoanApplication loan = createLoanApplication(profile);
 
-        LoanApplication savedLoan = loanApplicationRepository.save(loan); // ✅ persist
-
-        assertThat(savedLoan.getApplicationId()).isNotNull(); // will be generated
+        LoanApplication savedLoan = loanApplicationRepository.save(loan);
+        assertThat(savedLoan.getApplicationId()).isNotNull();
         assertThat(savedLoan.getLoanStatus()).isEqualTo("PENDING");
     }
     @Test
@@ -139,7 +138,7 @@ public class LoanApplicationRepositoryTest {
         profile = customerProfileRepository.save(profile);
 
         LoanApplication loan = createLoanApplication(profile);
-        loan.setLoanAmount(250000.0); // set expected value
+        loan.setLoanAmount(250000.0);
         LoanApplication savedLoan = loanApplicationRepository.save(loan);
 
         Optional<LoanApplication> result = loanApplicationRepository.findById(savedLoan.getApplicationId());
@@ -183,7 +182,7 @@ public class LoanApplicationRepositoryTest {
         CustomerProfile profile = createCustomerProfile(user);
 
         LoanApplication loan = createLoanApplication(profile);
-        loan.setEmi(null); // EMI is not nullable
+        loan.setEmi(null);
 
         assertThrows(DataIntegrityViolationException.class, () -> {
             loanApplicationRepository.saveAndFlush(loan);
@@ -196,12 +195,12 @@ public class LoanApplicationRepositoryTest {
         UserAccount user = userAccountRepository.save(createUser());
         CustomerProfile profile = customerProfileRepository.save(createCustomerProfile(user));
 
-        LoanApplication loan1 = loanApplicationRepository.save(createLoanApplication(profile));
-        LoanApplication loan2 = loanApplicationRepository.save(createLoanApplication(profile));
+        loanApplicationRepository.save(createLoanApplication(profile));
+        loanApplicationRepository.save(createLoanApplication(profile));
 
         List<LoanApplication> result = loanApplicationRepository.findAll();
 
-        assertThat(result).hasSizeGreaterThanOrEqualTo(2);
+        assertThat(result).hasSizeGreaterThanOrEqualTo(2); // Now this will pass
     }
 
     @Test
