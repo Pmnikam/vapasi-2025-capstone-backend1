@@ -25,6 +25,7 @@ import java.util.List;
 
 import static com.tw.util.AppConstant.*;
 
+
 @Service
 public class LoanApplicationServiceImpl implements LoanApplicationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoanApplicationServiceImpl.class);
@@ -76,18 +77,26 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
             throw new IllegalArgumentException("Invalid date format for DOB");
         }
 
-        CustomerProfile profile = CustomerProfile.builder()
-                .dob(dob)
-                .mobileNo(requestDto.getMobileNo())
-                .address(requestDto.getAddress())
-                .aadharNo(requestDto.getAadharNo())
-                .panNo(requestDto.getPanNo())
-                .loginAccount(userAccount)
-                .build();
-
-        if(existingProfile != null){
-            LOGGER.info("Overwriting existing customer profile for Aadhar: {}", requestDto.getAadharNo());
-            profile.setPId(existingProfile.getPId());
+        CustomerProfile customerProfile;
+        if (existingProfile != null) {
+            LOGGER.info("Updating existing profile for Aadhar: {}", requestDto.getAadharNo());
+            customerProfile = existingProfile;
+            customerProfile.setDob(dob);
+            customerProfile.setMobileNo(requestDto.getMobileNo());
+            customerProfile.setAddress(requestDto.getAddress());
+            customerProfile.setPanNo(requestDto.getPanNo());
+            // Aadhar number should not change; skip or validate immutability
+        } else {
+            customerProfile = new CustomerProfile();
+            customerProfile = CustomerProfile.builder()
+                    .dob(dob)
+                    .mobileNo(requestDto.getMobileNo())
+                    .address(requestDto.getAddress())
+                    .aadharNo(requestDto.getAadharNo())
+                    .panNo(requestDto.getPanNo())
+                    .loginAccount(userAccount)
+                    .loanApplications(new ArrayList<>())
+                    .build();
         }
 
         LoanApplication loanApp = LoanApplication.builder()
@@ -102,16 +111,17 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
                 .tenure(requestDto.getTenure())
                 .emi(requestDto.getEmi())
                 .interestRate(AppConstant.INTEREST_RATE)
-                .customerProfile(profile)
+                .customerProfile(customerProfile)
                 .build();
 
-        if(profile.getLoanApplications() == null)
+        if(customerProfile.getLoanApplications() == null)
         {
-            profile.setLoanApplications(new ArrayList<>());
+            customerProfile.setLoanApplications(new ArrayList<>());
         }
-        profile.getLoanApplications().add(loanApp);
+        customerProfile.getLoanApplications().add(loanApp);
+        customerProfileRepository.save(customerProfile);
+        loanApplicationRepository.save(loanApp);
 
-        customerProfileRepository.save(profile);
         LOGGER.info("Loan application submitted successfully. Application ID: {}", loanApp.getApplicationId());
 
         return loanApp.getApplicationId();
@@ -125,7 +135,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         CustomerProfile profile = loanApp.getCustomerProfile();
 
         return LoanApplicationResponseDto.builder()
-                .applicationNo(loanApp.getApplicationId())
+                .applicationNo(Long.valueOf(loanApp.getApplicationId()))
                 .dob(profile.getDob().toString())
                 .mobileNo(profile.getMobileNo())
                 .address(profile.getAddress())
@@ -156,7 +166,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
             CustomerProfile profile = loanApp.getCustomerProfile();
 
             LoanApplicationResponseDto responseDto = LoanApplicationResponseDto.builder()
-                    .applicationNo(loanApp.getApplicationId())
+                    .applicationNo(Long.valueOf(loanApp.getApplicationId()))
                     .dob(profile.getDob().toString())
                     .mobileNo(profile.getMobileNo())
                     .address(profile.getAddress())
@@ -189,7 +199,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         String newStatus = loanAppStatusChangeRequestDto.getStatus();
         String oldStatus = loanApp.getLoanStatus();
         //todo check whether it is valid state
-        if(oldStatus.equals(APPROVED) || oldStatus.equals(REJECTED)) {
+        if(oldStatus.equals(APPROVED)){
             throw new InvalidLoanStatusException("Loan is in approved state. Cannot change it.");
         }
         if(newStatus.equals(PENDING_CUSTOMER)){
@@ -217,6 +227,19 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         return loanAppStatusChangeResponseDto;
     }
 
+    @Override
+    public Boolean checkApplicationStatus(Long userId) {
+        List<LoanApplication> existingApps = loanApplicationRepository
+                .findByCustomerProfile_LoginAccount_LoginId(userId);
+        boolean hasPendingStatus = existingApps.stream()
+                .anyMatch(app -> PENDING_CUSTOMER.equals(app.getLoanStatus())
+                        || PENDING_ADMIN.equals(app.getLoanStatus()));
+        if (hasPendingStatus) {
+            return true;
+        }
+        return false;
+    }
+
     public Boolean deleteApplicationById(Long userId, Long applicationId){
         LOGGER.info("Deleting (soft) applicationId: {} by userId: {}", applicationId, userId);
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
@@ -231,7 +254,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         LOGGER.info("Verifying ownership and existence of applicationId: {} for userId: {}", applicationId, userId);
         LoanApplication loanApp = loanApplicationRepository.findById(applicationId)
                 .orElseThrow(() -> {
-                    LOGGER.warn("Loan application not found: {}", applicationId);
+                    LOGGER.warn("Loan application not found: {}", applicationId.toString());
                     return new LoanApplicationNotFoundException("Loan application not found exception: " + applicationId);
                 });
         if(!loanApp.getIsActive()){

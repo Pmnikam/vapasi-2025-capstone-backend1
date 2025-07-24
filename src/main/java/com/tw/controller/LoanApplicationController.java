@@ -46,6 +46,14 @@ public class LoanApplicationController {
         return new ResponseEntity<>(loanApplicationResponseDtos, HttpStatus.OK);
     }
 
+    @GetMapping(value = "/check-active")
+    public ResponseEntity<Boolean> checkActiveApplication(
+            @PathVariable Long userId) {
+        Boolean check_active
+                = loanApplicationService.checkApplicationStatus(userId);
+        return new ResponseEntity<>(true, HttpStatus.OK);
+    }
+
     @PutMapping("/{applicationId}")
     public ResponseEntity<LoanAppStatusChangeResponseDto> changeApplicationStatus(
             @PathVariable Long userId,

@@ -14,5 +14,6 @@ public interface LoanApplicationService {
      LoanApplicationResponseDto getApplicationById(Long userId, Long applicationId);
      List<LoanApplicationResponseDto> getAllApplicationsByUserId(Long userId);
      LoanAppStatusChangeResponseDto changeApplicationStatusById(Long userId, Long applicationId, LoanAppStatusChangeRequestDto requestDto);
+     Boolean checkApplicationStatus(Long userId);
      Boolean deleteApplicationById(Long userId, Long applicationId);
 }
