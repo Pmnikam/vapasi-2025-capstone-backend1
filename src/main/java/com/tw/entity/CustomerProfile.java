@@ -40,6 +40,6 @@ public class CustomerProfile {
     @JoinColumn(name = "user_account_id", nullable = false, unique = true)
     private UserAccount loginAccount;
 
-    @OneToMany(mappedBy = "customerProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "customerProfile", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<LoanApplication> loanApplications;
 }

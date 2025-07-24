@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface CustomerProfileRepository extends JpaRepository<CustomerProfile, Long> {
     Optional<CustomerProfile> findByAadharNo(String aadharNo);
+    Optional<CustomerProfile> findByLoginAccount_LoginId(Long loginId);
+
 }

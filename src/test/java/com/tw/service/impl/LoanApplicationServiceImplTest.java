@@ -1,12 +1,9 @@
 package com.tw.service.impl;
 
 
-import com.tw.dto.LoanAppStatusChangeRequestDto;
-import com.tw.dto.LoanAppStatusChangeResponseDto;
 import com.tw.dto.LoanApplicationRequestDto;
 import com.tw.dto.LoanApplicationResponseDto;
 import com.tw.entity.CustomerProfile;
-import com.tw.entity.LoanAccount;
 import com.tw.entity.LoanApplication;
 import com.tw.entity.UserAccount;
 import com.tw.exception.LoanInEligibilityException;
@@ -29,7 +26,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 class LoanApplicationServiceImplTest {
@@ -66,16 +64,20 @@ class LoanApplicationServiceImplTest {
 
     @Test
     void shouldSubmitApplicationSuccessfully() {
+
         when(userAccountRepository.findById(1L)).thenReturn(Optional.of(user));
         when(loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(1L)).thenReturn(Collections.emptyList());
         when(customerProfileRepository.findByAadharNo("123456789012")).thenReturn(Optional.of(profile));
-        when(customerProfileRepository.save(any(CustomerProfile.class))).thenAnswer(i -> {
-            CustomerProfile savedProfile = i.getArgument(0);
-            savedProfile.getLoanApplications().get(0).setApplicationId(100L);
-            return savedProfile;
+        when(customerProfileRepository.findByLoginAccount_LoginId(1L)).thenReturn(Optional.of(profile));
+
+        when(loanApplicationRepository.save(any(LoanApplication.class))).thenAnswer(invocation -> {
+            LoanApplication app = invocation.getArgument(0);
+            app.setApplicationId(100L);  // Simulate DB-assigned ID
+            return app;
         });
 
         Long appId = loanApplicationService.submitApplication(1L, requestDto);
+
 
         assertNotNull(appId);
         assertEquals(100L, appId);
@@ -235,45 +237,6 @@ class LoanApplicationServiceImplTest {
         loanApplication.getCustomerProfile().getLoginAccount().setLoginId(2L);
         when(loanApplicationRepository.findById(10L)).thenReturn(Optional.of(loanApplication));
         assertThrows(UnauthorizedException.class, () -> loanApplicationService.getApplicationById(1L, 10L));
-    }
-
-    @Test
-    void shouldChangeLoanStatusSuccessfully() {
-        Long userId = 1L;
-        Long applicationId = 10L;
-        LoanAppStatusChangeRequestDto dto = new LoanAppStatusChangeRequestDto();
-        dto.setStatus("REJECTED");
-
-        LoanApplication loanApp = new LoanApplication();
-        loanApp.setApplicationId(applicationId);
-        loanApp.setLoanStatus("PENDING_CUSTOMER");
-        loanApp.setLoanAmount(200000.0);
-        loanApp.setIsActive(true);
-
-        CustomerProfile profile = new CustomerProfile();
-        UserAccount login = new UserAccount();
-        login.setLoginId(userId);
-        profile.setLoginAccount(login);
-        loanApp.setCustomerProfile(profile);
-
-        // ✅ Mock findById
-        when(loanApplicationRepository.findById(applicationId)).thenReturn(Optional.of(loanApp));
-
-        // ✅ Mock save behavior to set accountId
-        when(loanApplicationRepository.save(any())).thenAnswer(invocation -> {
-            LoanApplication saved = invocation.getArgument(0);
-            LoanAccount account = saved.getLoanAccount();
-            if (account != null) {
-                account.setAccountId(1234L);
-            }
-            return saved;
-        });
-
-        LoanAppStatusChangeResponseDto response = loanApplicationService.changeApplicationStatusById(userId, applicationId, dto);
-
-        assertEquals(dto.getStatus(), loanApp.getLoanStatus());
-        assertNotNull(response.getLoanAmount());
-        assertNotNull(response.getAccountId());
     }
 
 

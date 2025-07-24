@@ -64,6 +64,18 @@ public class CustomerProfileRepositoryTest {
 
         assertEquals("Mumbai", updated.getAddress());
     }
+
+    @Test
+    void shouldFindCustomerProfileByLoginAccountId() {
+        UserAccount user = createUser();
+        CustomerProfile profile = customerProfileRepository.save(createProfile(user));
+
+        Optional<CustomerProfile> found = customerProfileRepository.findByLoginAccount_LoginId(user.getLoginId());
+
+        assertTrue(found.isPresent());
+        assertEquals("123456789012", found.get().getAadharNo());
+        assertEquals("Surbhi", found.get().getLoginAccount().getName());
+    }
 }
 
 
