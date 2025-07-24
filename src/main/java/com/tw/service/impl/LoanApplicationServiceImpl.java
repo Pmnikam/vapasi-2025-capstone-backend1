@@ -125,7 +125,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         CustomerProfile profile = loanApp.getCustomerProfile();
 
         return LoanApplicationResponseDto.builder()
-                .applicationNo(Long.valueOf(loanApp.getApplicationId()))
+                .applicationNo(loanApp.getApplicationId())
                 .dob(profile.getDob().toString())
                 .mobileNo(profile.getMobileNo())
                 .address(profile.getAddress())
@@ -156,7 +156,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
             CustomerProfile profile = loanApp.getCustomerProfile();
 
             LoanApplicationResponseDto responseDto = LoanApplicationResponseDto.builder()
-                    .applicationNo(Long.valueOf(loanApp.getApplicationId()))
+                    .applicationNo(loanApp.getApplicationId())
                     .dob(profile.getDob().toString())
                     .mobileNo(profile.getMobileNo())
                     .address(profile.getAddress())
@@ -189,13 +189,13 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         String newStatus = loanAppStatusChangeRequestDto.getStatus();
         String oldStatus = loanApp.getLoanStatus();
         //todo check whether it is valid state
-        if(oldStatus.equals(CUSTOMER_APPROVED)){
+        if(oldStatus.equals(APPROVED) || oldStatus.equals(REJECTED)) {
             throw new InvalidLoanStatusException("Loan is in approved state. Cannot change it.");
         }
         if(newStatus.equals(PENDING_CUSTOMER)){
             throw new InvalidLoanStatusException("Not authorised to change to this state.Only possible state are Approved and Rejected");
         }
-        if(oldStatus.equals(PENDING_ADMIN) && newStatus.equals(CUSTOMER_APPROVED)){
+        if(oldStatus.equals(PENDING_ADMIN) && newStatus.equals(APPROVED)){
             throw new InvalidLoanStatusException("Not authorized for this change");
         }
         loanApp.setLoanStatus(loanAppStatusChangeRequestDto.getStatus());
@@ -231,7 +231,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         LOGGER.info("Verifying ownership and existence of applicationId: {} for userId: {}", applicationId, userId);
         LoanApplication loanApp = loanApplicationRepository.findById(applicationId)
                 .orElseThrow(() -> {
-                    LOGGER.warn("Loan application not found: {}", applicationId.toString());
+                    LOGGER.warn("Loan application not found: {}", applicationId);
                     return new LoanApplicationNotFoundException("Loan application not found exception: " + applicationId);
                 });
         if(!loanApp.getIsActive()){
