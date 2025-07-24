@@ -68,7 +68,7 @@ public class AdminServiceImpl implements AdminService {
         if ("approve".equalsIgnoreCase(action)) {
             loanApp.setLoanStatus("Pending Customer Approval");
         } else if ("reject".equalsIgnoreCase(action)) {
-            loanApp.setLoanStatus("Rejected by Admin");
+            loanApp.setLoanStatus("Rejected");
         } else {
             throw new IllegalArgumentException("Invalid action: " + action + ". Use 'approve' or 'reject'.");
         }
