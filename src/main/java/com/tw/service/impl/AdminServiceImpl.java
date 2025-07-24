@@ -1,8 +1,7 @@
 package com.tw.service.impl;
+import com.tw.dto.CustomerLoanInfoDto;
 import com.tw.entity.LoanApplication;
 import com.tw.exception.*;
-import com.tw.projection.CustomerLoanInfo;
-import com.tw.projection.LoanApplicationView;
 import com.tw.repository.LoanApplicationRepository;
 import com.tw.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,26 +11,16 @@ import java.util.List;
 
 @Service
 public class AdminServiceImpl implements AdminService {
-
     @Autowired
     LoanApplicationRepository loanApplicationRepository;
 
     @Override
-    public List<CustomerLoanInfo> getAllCustomerLoanInfo() {
-        List<CustomerLoanInfo> loanInfoList = loanApplicationRepository.fetchAllCustomerLoanInfo();
+    public List<CustomerLoanInfoDto> getAllCustomerLoanInfo() {
+        List<CustomerLoanInfoDto> loanInfoList = loanApplicationRepository.fetchAllCustomerLoanApplications();
         if (loanInfoList.isEmpty()) {
             throw new LoanNotFoundException("No customer loan applications found");
         }
         return loanInfoList;
-    }
-
-    public List<LoanApplicationView> getCustomerLoanInfoById(Long loginId) {
-        List<LoanApplicationView> results = loanApplicationRepository.findLoanApplicationsByUserId(loginId);
-
-        if (results.isEmpty()) {
-            throw new LoanNotFoundException("No loan applications found for user ID: " + loginId);
-        }
-        return results;
     }
 
     @Override

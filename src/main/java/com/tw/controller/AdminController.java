@@ -1,7 +1,6 @@
 package com.tw.controller;
 
-import com.tw.projection.CustomerLoanInfo;
-import com.tw.projection.LoanApplicationView;
+import com.tw.dto.CustomerLoanInfoDto;
 import com.tw.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,15 +17,10 @@ public class AdminController {
     AdminService adminService;
 
     @GetMapping("/users")
-    public ResponseEntity<List<CustomerLoanInfo>> getAllCustomerLoanInfo() {
+    public ResponseEntity<List<CustomerLoanInfoDto>> getAllCustomerLoanInfo() {
         return ResponseEntity.ok(adminService.getAllCustomerLoanInfo());
     }
 
-    @GetMapping("/users/{id}")
-    public ResponseEntity<List<LoanApplicationView>> getCustomerLoanInfoById(@PathVariable Long id) {
-        List<LoanApplicationView> loanInfoList = adminService.getCustomerLoanInfoById(id);
-        return ResponseEntity.ok(loanInfoList);
-    }
     @PutMapping("/users/{customerId}/loan/{loanId}")
     public ResponseEntity<String> processLoanDecision(
             @PathVariable Long customerId,

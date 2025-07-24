@@ -38,7 +38,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/users/**", "/admin/**").permitAll()
+                        .requestMatchers("/users/**", "/admin/**", "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults());
