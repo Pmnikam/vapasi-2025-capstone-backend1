@@ -1,15 +1,15 @@
 package com.tw.service.impl;
 
+import com.tw.dto.LoanAppStatusChangeRequestDto;
+import com.tw.dto.LoanAppStatusChangeResponseDto;
 import com.tw.dto.LoanApplicationRequestDto;
 import com.tw.dto.LoanApplicationResponseDto;
+import com.tw.entity.LoanAccount;
 import com.tw.entity.LoanApplication;
 import com.tw.entity.CustomerProfile;
 import com.tw.entity.UserAccount;
 import com.tw.exception.*;
-import com.tw.repository.LoanAppDocumentRepository;
-import com.tw.repository.LoanApplicationRepository;
-import com.tw.repository.CustomerProfileRepository;
-import com.tw.repository.UserAccountRepository;
+import com.tw.repository.*;
 import com.tw.service.LoanApplicationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +30,22 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     @Autowired
     LoanApplicationRepository loanApplicationRepository;
     @Autowired
+    LoanAccountRepository loanAccountRepository;
+    @Autowired
     private UserAccountRepository userAccountRepository;
     @Autowired
     private CustomerProfileRepository customerProfileRepository;
+
+    /*
+    1. Check whether user exists.
+    2. Check whether he is eligible for loan
+    3. Check whether he has already applied for loan and it is not in either "Pending" or "awaiting" state
+    4. Check whether customer profile already exists. If so overwrite it.
+        To do this search by aadhar.
+    5. Overwrite or create customerProfile.
+    6. Create Loan Application
+    7. Return application Number
+    * */
 
     @Override
     public Long submitApplication(Long userId, LoanApplicationRequestDto requestDto) {
@@ -52,8 +65,8 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         List<LoanApplication> existingApps = loanApplicationRepository
                 .findByCustomerProfile_LoginAccount_LoginId(userId);
         boolean hasPendingStatus = existingApps.stream()
-                .anyMatch(app -> "PendingCustomerApproval".equals(app.getLoanStatus())
-                        || "PendingUserApproval".equals(app.getLoanStatus()));
+                .anyMatch(app -> "Pending Customer Approval".equals(app.getLoanStatus())
+                        || "Pending User Approval".equals(app.getLoanStatus()));
         if (hasPendingStatus) {
             throw new LoanInEligibilityException("Loan application is already in progress");
         }
@@ -64,13 +77,13 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
             throw new LoanInEligibilityException("Requested amount exceeds. Max "+eligibleLoanAmount);
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate dob;
         try{
             dob = LocalDate.parse(requestDto.getDob(), formatter);
         }
         catch (DateTimeParseException ex){
-            LOGGER.error("Failed to parse DOB: {}. Expected format dd-MM-yyyy", requestDto.getDob());
+            LOGGER.error("Failed to parse DOB: {}. Expected format yyyy-MM-dd", requestDto.getDob());
             throw new IllegalArgumentException("Invalid date format for DOB");
         }
 
@@ -94,7 +107,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
                 .propertyName(requestDto.getPropertyName())
                 .location(requestDto.getLocation())
                 .estimatedCost(requestDto.getEstimatedCost())
-                .loanStatus("PendingAdminApproval")
+                .loanStatus("Pending Admin Approval")
                 .isActive(true)
                 .documentType(requestDto.getDocumentType())
                 .tenure(requestDto.getTenure())
@@ -134,9 +147,10 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
 
         CustomerProfile profile = loanApp.getCustomerProfile();
+//        LoanAppDocument document = loanApp.getBinaryDocument();
 
         return LoanApplicationResponseDto.builder()
-                .applicationNo(loanApp.getApplicationId())
+                .applicationNo(Long.valueOf(loanApp.getApplicationId()))
                 .dob(profile.getDob().toString())
                 .mobileNo(profile.getMobileNo())
                 .address(profile.getAddress())
@@ -163,14 +177,40 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     }
 
     @Override
-    public Boolean changeApplicationStatusById(Long userId, Long applicationId, String status){
-        LOGGER.info("Changing application status for applicationId: {} by userId: {}", applicationId, userId);
+    public LoanAppStatusChangeResponseDto changeApplicationStatusById(Long userId, Long applicationId, LoanAppStatusChangeRequestDto loanAppStatusChangeRequestDto){
+        String status = loanAppStatusChangeRequestDto.getStatus();
+        LOGGER.info("Changing application status for applicationId: {} by userId: {}", applicationId,
+                userId);
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
-        loanApp.setLoanStatus("approved"); //todo remove hardcoding
-        loanApplicationRepository.save(loanApp);
-        LOGGER.info("Loan application {} status changed to {}", applicationId, status);
-        return true;
+        String newStatus = loanAppStatusChangeRequestDto.getStatus();
+        String oldStatus = loanApp.getLoanStatus();
+        //todo check whether it is valid state
+        if(oldStatus.equals("Approved")){
+            throw new InvalidLoanStatusException("Loan is in approved state. Cannot change it.");
+        }
+        if(newStatus.equals("Pending Customer Approval")){
+            throw new InvalidLoanStatusException("Not authorised to change to this state.Only possible state are Approved and Rejected");
+        }
+        if(oldStatus.equals("Pending Admin Approval") && newStatus.equals("Approved")){
+            throw new InvalidLoanStatusException("Not authorized for this change");
+        }
+        loanApp.setLoanStatus(loanAppStatusChangeRequestDto.getStatus());
 
+        LoanAccount loanAccount = new LoanAccount();
+        loanAccount.setAmountDispersed(loanApp.getLoanAmount());
+        loanAccount.setLoanApplication(loanApp);
+        loanApp.setLoanAccount(loanAccount);
+
+        loanApplicationRepository.save(loanApp);
+
+        LOGGER.info("Loan application {} status changed to {}", applicationId, status);
+        LOGGER.info("Loan account created successfully. AccountId ID: {}", loanApp.getLoanAccount().getAccountId());
+
+        LoanAppStatusChangeResponseDto  loanAppStatusChangeResponseDto = new LoanAppStatusChangeResponseDto();
+        loanAppStatusChangeResponseDto.setLoanAmount(loanApp.getLoanAccount().getAmountDispersed());
+        loanAppStatusChangeResponseDto.setAccountId(loanApp.getLoanAccount().getAccountId());
+
+        return loanAppStatusChangeResponseDto;
     }
 
     public Boolean deleteApplicationById(Long userId, Long applicationId){
@@ -187,17 +227,18 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         LOGGER.info("Verifying ownership and existence of applicationId: {} for userId: {}", applicationId, userId);
         LoanApplication loanApp = loanApplicationRepository.findById(applicationId)
                 .orElseThrow(() -> {
-                    LOGGER.warn("Loan application not found: {}", applicationId);
-                    return new LoanApplicationNotFoundException("Loan Application not found: " + applicationId);
+                    LOGGER.warn("Loan application not found: {}", applicationId.toString());
+                    return new LoanApplicationNotFoundException("Loan application not found exception: " + applicationId);
                 });
         if(!loanApp.getIsActive()){
             LOGGER.warn("Loan application {} is already inactive (soft deleted)", applicationId);
-            throw new LoanInactiveException("Loan application is not active and cannot be processed.");//soft delete done already
+            throw new UnauthorizedException("Loan application is already deleted. Application Id:  "+applicationId); //soft delete done already
         }
         if (!loanApp.getCustomerProfile().getLoginAccount().getLoginId().equals(userId)) {
             LOGGER.warn("Unauthorized access attempt by userId: {} for applicationId: {}", userId, applicationId);
             throw new UnauthorizedException("Application does not belong to this user");
         }
+
         return loanApp;
     }
 
