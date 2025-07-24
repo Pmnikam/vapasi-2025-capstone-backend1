@@ -1,13 +1,16 @@
 package com.tw.dto;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class CustomerLoanInfoDto {
+
     private Long loginId;
     private String name;
     private String email;

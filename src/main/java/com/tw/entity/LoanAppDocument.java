@@ -18,7 +18,7 @@ public class LoanAppDocument {
     @Column(name = "doc_id")
     private Long documentId;
 
-    @Column(name="doc_type", nullable = false)
+    @Column(name = "doc_type", nullable = false)
     private String documentType;
 
     @Lob

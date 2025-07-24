@@ -4,17 +4,19 @@ import com.tw.dto.LoanAppStatusChangeRequestDto;
 import com.tw.dto.LoanAppStatusChangeResponseDto;
 import com.tw.dto.LoanApplicationRequestDto;
 import com.tw.dto.LoanApplicationResponseDto;
+import com.tw.entity.CustomerProfile;
 import com.tw.entity.LoanAccount;
 import com.tw.entity.LoanApplication;
-import com.tw.entity.CustomerProfile;
 import com.tw.entity.UserAccount;
 import com.tw.exception.*;
-import com.tw.repository.*;
+import com.tw.repository.CustomerProfileRepository;
+import com.tw.repository.LoanApplicationRepository;
+import com.tw.repository.UserAccountRepository;
 import com.tw.service.LoanApplicationService;
+import com.tw.util.AppConstant;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.tw.util.AppConstant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -67,17 +69,16 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         }
 
         double eligibleLoanAmount = 60 * (0.6 * requestDto.getMonthlyIncome());
-        if(requestDto.getLoanAmount() > eligibleLoanAmount){
+        if (requestDto.getLoanAmount() > eligibleLoanAmount) {
             LOGGER.warn("Loan amount {} exceeds eligibility limit {}", requestDto.getLoanAmount(), eligibleLoanAmount);
-            throw new LoanInEligibilityException("Requested amount exceeds. Max "+eligibleLoanAmount);
+            throw new LoanInEligibilityException("Requested amount exceeds. Max " + eligibleLoanAmount);
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate dob;
-        try{
+        try {
             dob = LocalDate.parse(requestDto.getDob(), formatter);
-        }
-        catch (DateTimeParseException ex){
+        } catch (DateTimeParseException ex) {
             LOGGER.error("Failed to parse DOB: {}. Expected format yyyy-MM-dd", requestDto.getDob());
             throw new IllegalArgumentException("Invalid date format for DOB");
         }
@@ -90,7 +91,6 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
             customerProfile.setMobileNo(requestDto.getMobileNo());
             customerProfile.setAddress(requestDto.getAddress());
             customerProfile.setPanNo(requestDto.getPanNo());
-            // Aadhar number should not change; skip or validate immutability
         } else {
             customerProfile = new CustomerProfile();
             customerProfile = CustomerProfile.builder()
@@ -119,8 +119,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
                 .customerProfile(customerProfile)
                 .build();
 
-        if(customerProfile.getLoanApplications() == null)
-        {
+        if (customerProfile.getLoanApplications() == null) {
             customerProfile.setLoanApplications(new ArrayList<>());
         }
         customerProfile.getLoanApplications().add(loanApp);
@@ -130,14 +129,14 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     }
 
     @Override
-    public LoanApplicationResponseDto getApplicationById(Long userId, Long applicationId){
+    public LoanApplicationResponseDto getApplicationById(Long userId, Long applicationId) {
         LOGGER.info("Fetching loan application details for applicationId: {}, userId: {}", applicationId, userId);
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
 
         CustomerProfile profile = loanApp.getCustomerProfile();
 
         return LoanApplicationResponseDto.builder()
-                .applicationNo(Long.valueOf(loanApp.getApplicationId()))
+                .applicationNo(loanApp.getApplicationId())
                 .dob(profile.getDob().toString())
                 .mobileNo(profile.getMobileNo())
                 .address(profile.getAddress())
@@ -159,7 +158,6 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     @Override
     public List<LoanApplicationResponseDto> getAllApplicationsByUserId(Long userId) {
         LOGGER.info("Fetching all existing applications for userId: {}", userId);
-        //todo check whether user id is valid
         List<LoanApplication> loanApplicationList
                 = loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(userId);
         List<LoanApplicationResponseDto> responseDtoList = new ArrayList<>();
@@ -168,7 +166,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
             CustomerProfile profile = loanApp.getCustomerProfile();
 
             LoanApplicationResponseDto responseDto = LoanApplicationResponseDto.builder()
-                    .applicationNo(Long.valueOf(loanApp.getApplicationId()))
+                    .applicationNo(loanApp.getApplicationId())
                     .dob(profile.getDob().toString())
                     .mobileNo(profile.getMobileNo())
                     .address(profile.getAddress())
@@ -193,21 +191,20 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
 
 
     @Override
-    public LoanAppStatusChangeResponseDto changeApplicationStatusById(Long userId, Long applicationId, LoanAppStatusChangeRequestDto loanAppStatusChangeRequestDto){
+    public LoanAppStatusChangeResponseDto changeApplicationStatusById(Long userId, Long applicationId, LoanAppStatusChangeRequestDto loanAppStatusChangeRequestDto) {
         String status = loanAppStatusChangeRequestDto.getStatus();
         LOGGER.info("Changing application status for applicationId: {} by userId: {}", applicationId,
                 userId);
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
         String newStatus = loanAppStatusChangeRequestDto.getStatus();
         String oldStatus = loanApp.getLoanStatus();
-        //todo check whether it is valid state
-        if(oldStatus.equals(APPROVED)){
+        if (oldStatus.equals(APPROVED)) {
             throw new InvalidLoanStatusException("Loan is in approved state. Cannot change it.");
         }
-        if(newStatus.equals(PENDING_CUSTOMER)){
+        if (newStatus.equals(PENDING_CUSTOMER)) {
             throw new InvalidLoanStatusException("Not authorised to change to this state.Only possible state are Approved and Rejected");
         }
-        if(oldStatus.equals(PENDING_ADMIN) && newStatus.equals(APPROVED)){
+        if (oldStatus.equals(PENDING_ADMIN) && newStatus.equals(APPROVED)) {
             throw new InvalidLoanStatusException("Not authorized for this change");
         }
         loanApp.setLoanStatus(loanAppStatusChangeRequestDto.getStatus());
@@ -222,7 +219,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         LOGGER.info("Loan application {} status changed to {}", applicationId, status);
         LOGGER.info("Loan account created successfully. AccountId ID: {}", loanApp.getLoanAccount().getAccountId());
 
-        LoanAppStatusChangeResponseDto  loanAppStatusChangeResponseDto = new LoanAppStatusChangeResponseDto();
+        LoanAppStatusChangeResponseDto loanAppStatusChangeResponseDto = new LoanAppStatusChangeResponseDto();
         loanAppStatusChangeResponseDto.setLoanAmount(loanApp.getLoanAccount().getAmountDispersed());
         loanAppStatusChangeResponseDto.setAccountId(loanApp.getLoanAccount().getAccountId());
 
@@ -236,13 +233,10 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         boolean hasPendingStatus = existingApps.stream()
                 .anyMatch(app -> PENDING_CUSTOMER.equals(app.getLoanStatus())
                         || PENDING_ADMIN.equals(app.getLoanStatus()));
-        if (hasPendingStatus) {
-            return true;
-        }
-        return false;
+        return hasPendingStatus;
     }
 
-    public Boolean deleteApplicationById(Long userId, Long applicationId){
+    public Boolean deleteApplicationById(Long userId, Long applicationId) {
         LOGGER.info("Deleting (soft) applicationId: {} by userId: {}", applicationId, userId);
         LoanApplication loanApp = getVerifiedLoanApplication(userId, applicationId);
         loanApp.setIsActive(false);
@@ -252,16 +246,16 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     }
 
 
-    private LoanApplication getVerifiedLoanApplication(Long userId, Long applicationId){
+    private LoanApplication getVerifiedLoanApplication(Long userId, Long applicationId) {
         LOGGER.info("Verifying ownership and existence of applicationId: {} for userId: {}", applicationId, userId);
         LoanApplication loanApp = loanApplicationRepository.findById(applicationId)
                 .orElseThrow(() -> {
-                    LOGGER.warn("Loan application not found: {}", applicationId.toString());
+                    LOGGER.warn("Loan application not found: {}", applicationId);
                     return new LoanApplicationNotFoundException("Loan application not found exception: " + applicationId);
                 });
-        if(!loanApp.getIsActive()){
+        if (!loanApp.getIsActive()) {
             LOGGER.warn("Loan application {} is already inactive (soft deleted)", applicationId);
-            throw new UnauthorizedException("Loan application does not exist. Application Id:  "+applicationId); //soft delete done already
+            throw new UnauthorizedException("Loan application does not exist. Application Id:  " + applicationId);
         }
         if (!loanApp.getCustomerProfile().getLoginAccount().getLoginId().equals(userId)) {
             LOGGER.warn("Unauthorized access attempt by userId: {} for applicationId: {}", userId, applicationId);

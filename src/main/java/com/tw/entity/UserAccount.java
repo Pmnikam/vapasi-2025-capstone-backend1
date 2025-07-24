@@ -34,7 +34,7 @@ public class UserAccount {
     @OneToOne(mappedBy = "loginAccount", cascade = CascadeType.ALL)
     private CustomerProfile customerProfile;
 
-    public UserAccount(String name,String email,String password,String role){
+    public UserAccount(String name, String email, String password, String role) {
         this.role = role;
         this.name = name;
         this.email = email;

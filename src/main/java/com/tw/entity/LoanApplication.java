@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.sql.results.graph.Fetch;
 
 @Entity
 @Data
@@ -29,7 +28,7 @@ public class LoanApplication {
     @Column(name = "monthly_income", nullable = false)
     private Double monthlyIncome;
 
-    @Column(name = "is_active",  nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
     @Column(name = "property_name", nullable = false)
@@ -42,14 +41,14 @@ public class LoanApplication {
     private Double estimatedCost;
 
 
-    @ManyToOne(fetch = FetchType.EAGER,cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "profile_id", nullable = false)
     private CustomerProfile customerProfile;
 
     @OneToOne(mappedBy = "loanApplication", cascade = CascadeType.ALL)
     private LoanAccount loanAccount;
 
-    @Column(name="doc_type")
+    @Column(name = "doc_type")
     private String documentType;
 
     @Column(name = "interest_rate", nullable = false)
