@@ -55,7 +55,7 @@ public class LoanAccountRepositoryTest {
                 .isActive(true)
                 .propertyName("Dream House")
                 .location("Mumbai")
-                .estimatedCost("600000")
+                .estimatedCost(600000.0)
                 .customerProfile(profile)
                 .build();
 
