@@ -51,7 +51,7 @@ public class LoanApplicationController {
             @PathVariable Long userId) {
         Boolean check_active
                 = loanApplicationService.checkApplicationStatus(userId);
-        return new ResponseEntity<>(true, HttpStatus.OK);
+        return new ResponseEntity<>(check_active, HttpStatus.OK);
     }
 
     @PutMapping("/{applicationId}")
