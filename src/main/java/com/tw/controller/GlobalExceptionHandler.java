@@ -41,6 +41,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
     }
 
+    @ExceptionHandler(LoanInactiveException.class)
+    public ResponseEntity<String> handleLoanInactiveException(LoanInactiveException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    }
     @ExceptionHandler(InvalidUserCredentialsException.class)
     public ResponseEntity<String> handleInvalidCredentials(InvalidUserCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());

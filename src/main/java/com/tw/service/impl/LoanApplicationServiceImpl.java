@@ -30,22 +30,9 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
     @Autowired
     LoanApplicationRepository loanApplicationRepository;
     @Autowired
-    LoanAppDocumentRepository loanAppDocumentRepository;
-    @Autowired
     private UserAccountRepository userAccountRepository;
     @Autowired
     private CustomerProfileRepository customerProfileRepository;
-
-    /*
-    1. Check whether user exists.
-    2. Check whether he is eligible for loan
-    3. Check whether he has already applied for loan and it is not in either "Pending" or "awaiting" state
-    4. Check whether customer profile already exists. If so overwrite it.
-        To do this search by aadhar.
-    5. Overwrite or create customerProfile.
-    6. Create Loan Application
-    7. Return application Number
-    * */
 
     @Override
     public Long submitApplication(Long userId, LoanApplicationRequestDto requestDto) {
@@ -149,7 +136,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
         CustomerProfile profile = loanApp.getCustomerProfile();
 
         return LoanApplicationResponseDto.builder()
-                .applicationNo(Long.valueOf(loanApp.getApplicationId()))
+                .applicationNo(loanApp.getApplicationId())
                 .dob(profile.getDob().toString())
                 .mobileNo(profile.getMobileNo())
                 .address(profile.getAddress())
@@ -205,7 +192,7 @@ public class LoanApplicationServiceImpl implements LoanApplicationService {
                 });
         if(!loanApp.getIsActive()){
             LOGGER.warn("Loan application {} is already inactive (soft deleted)", applicationId);
-            throw new LoanApplicationNotFoundException(applicationId.toString()); //soft delete done already
+            throw new LoanInactiveException("Loan application is not active and cannot be processed.");//soft delete done already
         }
         if (!loanApp.getCustomerProfile().getLoginAccount().getLoginId().equals(userId)) {
             LOGGER.warn("Unauthorized access attempt by userId: {} for applicationId: {}", userId, applicationId);

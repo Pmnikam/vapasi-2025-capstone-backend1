@@ -1,8 +1,6 @@
 package com.tw.service.impl;
 import com.tw.entity.LoanApplication;
-import com.tw.exception.InvalidLoanStatusException;
-import com.tw.exception.LoanApplicationNotFoundException;
-import com.tw.exception.LoanNotFoundException;
+import com.tw.exception.*;
 import com.tw.projection.CustomerLoanInfo;
 import com.tw.projection.LoanApplicationView;
 import com.tw.repository.LoanApplicationRepository;
@@ -40,6 +38,10 @@ public class AdminServiceImpl implements AdminService {
     public String processLoanDecision(Long customerId, Long loanId, String action) {
         LoanApplication loanApp = fetchLoanApplication(customerId, loanId);
         validateLoanStatusForProcessing(loanApp);
+
+        if (!loanApp.getIsActive()) {
+            throw new LoanInactiveException("Loan application is not active and cannot be processed.");
+        }
 
         updateLoanStatusBasedOnAction(loanApp, action);
         loanApplicationRepository.save(loanApp);
