@@ -1,6 +1,8 @@
 
 package com.tw.service.impl;
 
+import com.tw.dto.LoanAppStatusChangeRequestDto;
+import com.tw.dto.LoanAppStatusChangeResponseDto;
 import com.tw.dto.LoanApplicationRequestDto;
 import com.tw.dto.LoanApplicationResponseDto;
 import com.tw.entity.CustomerProfile;
@@ -10,6 +12,7 @@ import com.tw.exception.*;
 import com.tw.repository.CustomerProfileRepository;
 import com.tw.repository.LoanApplicationRepository;
 import com.tw.repository.UserAccountRepository;
+import com.tw.util.AppConstant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -48,7 +51,7 @@ class LoanApplicationServiceImplTest {
         requestDto = LoanApplicationRequestDto.builder()
                 .aadharNo("123456789012")
                 .panNo("ABCDE1234F")
-                .dob("01-01-1990")
+                .dob("1990-01-01")
                 .mobileNo("9876543210")
                 .address("Some Address")
                 .monthlyIncome(50000.0)
@@ -128,25 +131,75 @@ class LoanApplicationServiceImplTest {
     }
 
     @Test
-    void shouldGetApplicationStatusById_Success() {
-        loanApplication.setCustomerProfile(profile);
-        profile.setLoginAccount(user);
+    void testGetAllApplicationsByUserId_returnsCorrectDtos() {
+        Long userId = 1L;
 
-        when(loanApplicationRepository.findById(100L)).thenReturn(Optional.of(loanApplication));
-        String status = loanApplicationService.getApplicationStatusById(1L, 100L);
-        assertEquals("Pending Verification", status);
+        // Create mock CustomerProfile
+        CustomerProfile mockProfile = new CustomerProfile();
+        mockProfile.setDob(LocalDate.of(1990, 1, 1));
+        mockProfile.setMobileNo("9876543210");
+        mockProfile.setAddress("123 Main St");
+        mockProfile.setAadharNo("123412341234");
+        mockProfile.setPanNo("ABCDE1234F");
+
+        // Create mock LoanApplication
+        LoanApplication loanApp = new LoanApplication();
+        loanApp.setApplicationId(100L);
+        loanApp.setCustomerProfile(mockProfile);
+        loanApp.setLoanAmount(500000.0);
+        loanApp.setMonthlyIncome(50000.0);
+        loanApp.setPropertyName("Dream Home");
+        loanApp.setLocation("Mumbai");
+        loanApp.setEstimatedCost(600000.0);
+        loanApp.setDocumentType("Aadhar, PAN");
+        loanApp.setLoanStatus("Pending");
+        loanApp.setTenure(10.0);
+        loanApp.setEmi(5400.0);
+
+        List<LoanApplication> loanApps = List.of(loanApp);
+
+        // Stub repository call
+        when(loanApplicationRepository.findByCustomerProfile_LoginAccount_LoginId(userId))
+                .thenReturn(loanApps);
+
+        // Act
+        List<LoanApplicationResponseDto> result = loanApplicationService.getAllApplicationsByUserId(userId);
+
+        // Assert
+        assertEquals(1, result.size());
+
+        LoanApplicationResponseDto dto = result.get(0);
+        assertEquals(100L, dto.getApplicationNo());
+        assertEquals("1990-01-01", dto.getDob());
+        assertEquals("9876543210", dto.getMobileNo());
+        assertEquals("123 Main St", dto.getAddress());
+        assertEquals("123412341234", dto.getAadharNo());
+        assertEquals("ABCDE1234F", dto.getPanNo());
+        assertEquals(500000.0, dto.getLoanAmount());
+        assertEquals(50000.0, dto.getMonthlyIncome());
+        assertEquals("Dream Home", dto.getPropertyName());
+        assertEquals("Mumbai", dto.getLocation());
+        assertEquals(600000.0, dto.getEstimatedCost());
+        assertEquals("Aadhar, PAN", dto.getDocumentSubmitted());
+        assertEquals("Pending", dto.getStatus());
+        assertEquals(10, dto.getTenure());
+        assertEquals(AppConstant.INTEREST_RATE, dto.getInterestRate());
+        assertEquals(5400.0, dto.getEmi());
     }
 
     @Test
-    void shouldtChangeApplicationStatusById_Success() {
+    void shouldChangeApplicationStatusById_Success() {
         loanApplication.setCustomerProfile(profile);
         profile.setLoginAccount(user);
 
-        when(loanApplicationRepository.findById(100L)).thenReturn(Optional.of(loanApplication));
+        when(loanApplicationRepository.findById(10L)).thenReturn(Optional.of(loanApplication));
 
-        Boolean result = loanApplicationService.changeApplicationStatusById(1L, 100L, "approved");
-        assertTrue(result);
-        assertEquals("approved", loanApplication.getLoanStatus());
+        LoanAppStatusChangeRequestDto dto = new LoanAppStatusChangeRequestDto("Approved");
+
+        LoanAppStatusChangeResponseDto response =
+                loanApplicationService.changeApplicationStatusById(1L, 10L, dto);
+
+        assertEquals("Approved", loanApplication.getLoanStatus());
     }
 
     @Test

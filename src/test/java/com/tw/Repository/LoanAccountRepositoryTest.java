@@ -52,6 +52,10 @@ public class LoanAccountRepositoryTest {
                 .loanAmount(500000.0)
                 .loanStatus("Pending")
                 .monthlyIncome(40000.0)
+                .emi(15000.0)
+                .interestRate(8.5)
+                .tenure(10.0)
+                .documentType("Aadhar")
                 .isActive(true)
                 .propertyName("Dream House")
                 .location("Mumbai")
@@ -61,7 +65,6 @@ public class LoanAccountRepositoryTest {
 
         return loanApplicationRepository.save(application);
     }
-
     @Test
     @Order(1)
     @DisplayName("Save LoanAccount")
